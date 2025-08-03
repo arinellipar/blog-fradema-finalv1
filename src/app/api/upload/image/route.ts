@@ -1,23 +1,39 @@
 // src/app/api/upload/image/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSupabaseAdminClient, isSupabaseAvailable } from "@/lib/supabase";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+// Configuração do AWS S3
+const s3Client = new S3Client({
+  region: process.env.AWS_REGION || "us-east-1",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
+  },
+});
+
+const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || "blog-images";
+const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN;
 
 /**
- * Upload de imagem para o Supabase Storage
+ * Upload de imagem para o AWS S3
  * Suporta JPG, PNG, WebP, GIF
  */
 export async function POST(request: NextRequest) {
   try {
-    // Verificar se o Supabase está disponível
-    if (!isSupabaseAvailable()) {
+    // Verificar se o AWS S3 está configurado
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
       return NextResponse.json(
-        { error: "Image upload service not configured" },
+        { error: "AWS S3 not configured" },
         { status: 503 }
       );
     }
 
-    const supabase = getSupabaseAdminClient();
     const formData = await request.formData();
     const file = formData.get("file") as File;
 
@@ -49,7 +65,7 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split(".").pop();
     const fileName = `${timestamp}-${randomString}.${fileExtension}`;
 
-    // Path no storage: images/{year}/{month}/{filename}
+    // Path no S3: images/{year}/{month}/{filename}
     const date = new Date();
     const storagePath = `images/${date.getFullYear()}/${(date.getMonth() + 1)
       .toString()
@@ -59,27 +75,29 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
 
-    // Upload para o Supabase Storage
-    const { data, error } = await supabase.storage
-      .from("blog-images")
-      .upload(storagePath, uint8Array, {
-        contentType: file.type,
-        cacheControl: "3600",
-        upsert: false,
-      });
+    // Upload para o AWS S3
+    const uploadCommand = new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: storagePath,
+      Body: uint8Array,
+      ContentType: file.type,
+      CacheControl: "public, max-age=31536000", // 1 ano
+      ACL: "public-read",
+    });
 
-    if (error) {
-      console.error("Supabase upload error:", error);
-      return NextResponse.json(
-        { error: "Failed to upload image" },
-        { status: 500 }
-      );
+    await s3Client.send(uploadCommand);
+
+    // Gerar URL pública
+    let publicUrl: string;
+    if (CLOUDFRONT_DOMAIN) {
+      // Usar CloudFront se configurado
+      publicUrl = `https://${CLOUDFRONT_DOMAIN}/${storagePath}`;
+    } else {
+      // Usar URL direta do S3
+      publicUrl = `https://${BUCKET_NAME}.s3.${
+        process.env.AWS_REGION || "us-east-1"
+      }.amazonaws.com/${storagePath}`;
     }
-
-    // Obter URL pública
-    const { data: urlData } = supabase.storage
-      .from("blog-images")
-      .getPublicUrl(storagePath);
 
     return NextResponse.json({
       success: true,
@@ -87,33 +105,32 @@ export async function POST(request: NextRequest) {
         name: file.name,
         size: file.size,
         type: file.type,
-        url: urlData.publicUrl,
+        url: publicUrl,
         path: storagePath,
       },
     });
   } catch (error) {
-    console.error("Upload error:", error);
+    console.error("S3 upload error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to upload image" },
       { status: 500 }
     );
   }
 }
 
 /**
- * Deletar imagem do Supabase Storage
+ * Deletar imagem do AWS S3
  */
 export async function DELETE(request: NextRequest) {
   try {
-    // Verificar se o Supabase está disponível
-    if (!isSupabaseAvailable()) {
+    // Verificar se o AWS S3 está configurado
+    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
       return NextResponse.json(
-        { error: "Image upload service not configured" },
+        { error: "AWS S3 not configured" },
         { status: 503 }
       );
     }
 
-    const supabase = getSupabaseAdminClient();
     const { searchParams } = new URL(request.url);
     const filePath = searchParams.get("path");
 
@@ -124,24 +141,19 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Remover do Supabase Storage
-    const { error } = await supabase.storage
-      .from("blog-images")
-      .remove([filePath]);
+    // Remover do AWS S3
+    const deleteCommand = new DeleteObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: filePath,
+    });
 
-    if (error) {
-      console.error("Supabase delete error:", error);
-      return NextResponse.json(
-        { error: "Failed to delete image" },
-        { status: 500 }
-      );
-    }
+    await s3Client.send(deleteCommand);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Delete error:", error);
+    console.error("S3 delete error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to delete image" },
       { status: 500 }
     );
   }

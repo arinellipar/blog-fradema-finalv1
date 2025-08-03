@@ -91,7 +91,7 @@ const useFileUpload = () => {
       }, 200);
 
       // Verificar se a API existe primeiro
-      const response = await fetch("/api/upload", {
+      const response = await fetch("/api/upload/image", {
         method: "POST",
         body: formData,
       }).catch((error) => {
@@ -131,6 +131,17 @@ const useFileUpload = () => {
       const result = await response.json();
 
       setTimeout(() => setUploadProgress(0), 1000);
+
+      // Adaptar resposta para compatibilidade
+      if (result.image) {
+        return {
+          filename: result.image.name,
+          originalName: result.image.name,
+          size: result.image.size,
+          type: result.image.type,
+          url: result.image.url,
+        };
+      }
 
       return result;
     } catch (error) {
