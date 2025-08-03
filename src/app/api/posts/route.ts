@@ -1,0 +1,149 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { authGuard as getAuthGuard } from "@/lib/auth";
+
+// GET /api/posts - Listar posts
+export async function GET(request: NextRequest) {
+  try {
+    console.log("🔍 Buscando posts publicados...");
+
+    const posts = await prisma.post.findMany({
+      where: {
+        published: true,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+        _count: {
+          select: {
+            PostView: true,
+            comments: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    console.log(`✅ Encontrados ${posts.length} posts publicados`);
+    return NextResponse.json(posts);
+  } catch (error) {
+    console.error("❌ Error fetching posts:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+// POST /api/posts - Criar novo post
+export async function POST(request: NextRequest) {
+  try {
+    // Verificar autenticação
+    const authResult = await getAuthGuard(request);
+    if (!authResult.isAuthenticated || !authResult.user) {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+    }
+
+    const body = await request.json();
+    const {
+      title,
+      content,
+      description,
+      mainImage,
+      category,
+      tags,
+      published = false,
+    } = body;
+
+    // Validações básicas
+    if (!title || !content) {
+      return NextResponse.json(
+        { error: "Título e conteúdo são obrigatórios" },
+        { status: 400 }
+      );
+    }
+
+    // Criar slug a partir do título
+    const slug = title
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-");
+
+    // Verificar se o slug já existe
+    const existingPost = await prisma.post.findFirst({
+      where: { slug },
+    });
+
+    let uniqueSlug = slug;
+    if (existingPost) {
+      uniqueSlug = `${slug}-${Date.now()}`;
+    }
+
+    // Criar o post
+    const post = await prisma.post.create({
+      data: {
+        title,
+        slug: uniqueSlug,
+        content,
+        excerpt: description || "",
+        mainImage,
+        published,
+        authorId: authResult.user.id,
+        tags: tags?.length
+          ? {
+              create: tags.map((tagName: string) => ({
+                tag: {
+                  connectOrCreate: {
+                    where: { name: tagName },
+                    create: {
+                      name: tagName,
+                      slug: tagName.toLowerCase().replace(/\s+/g, "-"),
+                    },
+                  },
+                },
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json(post, { status: 201 });
+  } catch (error) {
+    console.error("Error creating post:", error);
+    return NextResponse.json(
+      { error: "Erro interno do servidor" },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,251 @@
+// prisma/schema.prisma - Versão Corrigida
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  avatar        String?
+  role          UserRole @default(SUBSCRIBER)
+  passwordHash  String   @map("password_hash")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  emailVerified Boolean  @default(false) @map("email_verified")
+
+  // Relações one-to-one com cascade delete
+  preferences UserPreferences?
+  metadata    UserMetadata?
+
+  // Relações one-to-many
+  sessions           Session[]
+  verificationTokens VerificationToken[]
+  posts              Post[]
+  comments           Comment[]
+  PostView           PostView[]
+
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+model UserPreferences {
+  id                   String   @id @default(cuid())
+  userId               String   @unique @map("user_id")
+  theme                String   @default("system")
+  language             String   @default("pt-BR")
+  emailNotifications   Boolean  @default(true) @map("email_notifications")
+  pushNotifications    Boolean  @default(true) @map("push_notifications")
+  smsNotifications     Boolean  @default(false) @map("sms_notifications")
+  newsletterSubscribed Boolean  @default(false) @map("newsletter_subscribed")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model UserMetadata {
+  id                 String    @id @default(cuid())
+  userId             String    @unique @map("user_id")
+  lastLoginAt        DateTime? @map("last_login_at")
+  lastLoginIp        String?   @map("last_login_ip")
+  loginCount         Int       @default(0) @map("login_count")
+  registrationSource String?   @map("registration_source")
+  referralCode       String?   @map("referral_code")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_metadata")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  userAgent String?  @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id        String    @id @default(cuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime  @map("expires_at")
+  used      Boolean   @default(false)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([type, used])
+  @@map("verification_tokens")
+}
+
+// Continuação dos outros models...
+model Post {
+  id              String    @id @default(cuid())
+  title           String
+  slug            String    @unique
+  content         String
+  excerpt         String?
+  mainImage       String?   @map("main_image")
+  published       Boolean   @default(false)
+  authorId        String    @map("author_id")
+  metaTitle       String?   @map("meta_title")
+  metaDescription String?   @map("meta_description")
+  readingTime     Int?      @map("reading_time")
+  wordCount       Int?      @map("word_count")
+  publishedAt     DateTime? @map("published_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  author     User           @relation(fields: [authorId], references: [id])
+  categories PostCategory[]
+  tags       PostTag[]
+  comments   Comment[]
+  PostView   PostView[]
+
+  @@index([slug])
+  @@index([published])
+  @@index([authorId])
+  @@map("posts")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  posts PostCategory[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostCategory {
+  id         String @id @default(cuid())
+  postId     String @map("post_id")
+  categoryId String @map("category_id")
+
+  post     Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, categoryId])
+  @@map("post_categories")
+}
+
+model PostTag {
+  id     String @id @default(cuid())
+  postId String @map("post_id")
+  tagId  String @map("tag_id")
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+  @@map("post_tags")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String   @map("post_id")
+  authorId  String   @map("author_id")
+  parentId  String?  @map("parent_id")
+  approved  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  post              Post                @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author            User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  parent            Comment?            @relation("CommentReplies", fields: [parentId], references: [id])
+  replies           Comment[]           @relation("CommentReplies")
+  CommentAttachment CommentAttachment[]
+
+  @@index([postId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+// Adicionar ao schema.prisma existente
+
+model CommentAttachment {
+  id          String   @id @default(cuid())
+  commentId   String   @map("comment_id")
+  fileName    String   @map("file_name")
+  fileUrl     String   @map("file_url")
+  fileType    String   @map("file_type")
+  fileSize    Int      @map("file_size")
+  storagePath String   @map("storage_path")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  @@index([commentId])
+  @@map("comment_attachments")
+}
+
+model PostView {
+  id        String   @id @default(cuid())
+  postId    String   @map("post_id")
+  userId    String?  @map("user_id")
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  post Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([postId])
+  @@index([userId])
+  @@map("post_views")
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  AUTHOR
+  SUBSCRIBER
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  MAGIC_LINK
+}
