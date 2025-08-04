@@ -81,6 +81,9 @@ async function uploadLocal(file: File) {
  * Suporta JPG, PNG, WebP, GIF
  */
 export async function POST(request: NextRequest) {
+  console.log("🔄 API /api/upload/image chamada");
+  console.log("📋 Headers:", Object.fromEntries(request.headers.entries()));
+
   try {
     console.log("🚀 Iniciando upload de imagem...");
 

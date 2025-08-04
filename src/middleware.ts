@@ -142,7 +142,9 @@ const ROUTE_SECURITY_MATRIX: RouteSecurityMatrix = {
 
     // File Upload APIs
     "/api/upload/image",
+    "/api/upload",
     "/api/comments/upload",
+    "/api/test-upload",
 
     // System Health & Monitoring
     "/api/health",

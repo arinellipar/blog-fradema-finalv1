@@ -76,8 +76,12 @@ const useFileUpload = () => {
     setUploadProgress(0);
 
     try {
+      console.log("🚀 Iniciando upload do arquivo:", file.name);
+
       const formData = new FormData();
       formData.append("file", file);
+
+      console.log("📦 FormData criado, enviando para API...");
 
       // Simular progresso
       const progressInterval = setInterval(() => {
@@ -90,61 +94,47 @@ const useFileUpload = () => {
         });
       }, 200);
 
-      // Verificar se a API existe primeiro
+      // Fazer upload direto para a API
       const response = await fetch("/api/upload/image", {
         method: "POST",
         body: formData,
-      }).catch((error) => {
-        clearInterval(progressInterval);
-        // Se a API não existir, simular upload local
-        console.warn("API de upload não encontrada, simulando upload:", error);
-
-        // Simular delay
-        return new Promise<Response>((resolve) => {
-          setTimeout(() => {
-            resolve({
-              ok: true,
-              json: () =>
-                Promise.resolve({
-                  success: true,
-                  filename: `${Date.now()}-${file.name}`,
-                  originalName: file.name,
-                  size: file.size,
-                  type: file.type,
-                  url: URL.createObjectURL(file), // Usar blob URL para preview
-                }),
-            } as Response);
-          }, 1000);
-        });
       });
 
       clearInterval(progressInterval);
       setUploadProgress(100);
 
+      console.log("📡 Resposta da API:", response.status, response.statusText);
+
       if (!response.ok) {
         const errorData = await response
           .json()
           .catch(() => ({ error: "Erro desconhecido" }));
+        console.error("❌ Erro na resposta da API:", errorData);
         throw new Error(errorData.error || "Erro no upload");
       }
 
       const result = await response.json();
+      console.log("✅ Resultado do upload:", result);
 
       setTimeout(() => setUploadProgress(0), 1000);
 
       // Adaptar resposta para compatibilidade
       if (result.image) {
-        return {
+        const adaptedResult = {
           filename: result.image.name,
           originalName: result.image.name,
           size: result.image.size,
           type: result.image.type,
           url: result.image.url,
         };
+        console.log("🔄 Resultado adaptado:", adaptedResult);
+        return adaptedResult;
       }
 
+      console.log("📋 Retornando resultado original:", result);
       return result;
     } catch (error) {
+      console.error("❌ Erro no upload:", error);
       setUploadProgress(0);
       throw error;
     } finally {
@@ -228,6 +218,8 @@ export default function NovoPostPage() {
 
   // Processar arquivos (usado tanto para upload quanto drag & drop)
   const processFiles = async (files: File[]) => {
+    console.log("🔄 processFiles chamado com", files.length, "arquivos");
+
     if (files.length === 0) return;
 
     // Validações básicas
@@ -244,7 +236,10 @@ export default function NovoPostPage() {
     ];
 
     for (const file of files) {
+      console.log("📁 Processando arquivo:", file.name, file.type, file.size);
+
       if (file.size > maxSize) {
+        console.log("❌ Arquivo muito grande:", file.name);
         toast.error("Arquivo muito grande", {
           description: `O arquivo ${file.name} excede o limite de 10MB`,
         });
@@ -252,6 +247,7 @@ export default function NovoPostPage() {
       }
 
       if (!allowedTypes.includes(file.type)) {
+        console.log("❌ Tipo de arquivo inválido:", file.name, file.type);
         toast.error("Formato inválido", {
           description: `O arquivo ${file.name} não é um formato suportado`,
         });
@@ -259,12 +255,15 @@ export default function NovoPostPage() {
       }
 
       try {
+        console.log("🚀 Iniciando upload para:", file.name);
         const uploadedFile = await uploadFile(file);
+        console.log("✅ Upload concluído:", uploadedFile);
 
         setAttachedFiles((prev) => [...prev, uploadedFile]);
 
         // Se for imagem e não temos imagem principal ainda, definir como principal
         if (file.type.startsWith("image/") && !mainImagePreview) {
+          console.log("🖼️ Definindo como imagem principal:", uploadedFile.url);
           setMainImagePreview(uploadedFile.url);
         }
 
@@ -272,7 +271,7 @@ export default function NovoPostPage() {
           description: `${file.name} foi enviado com sucesso`,
         });
       } catch (error) {
-        console.error("Erro no upload:", error);
+        console.error("❌ Erro no upload:", error);
         toast.error("Erro no upload", {
           description:
             error instanceof Error ? error.message : "Tente novamente",
