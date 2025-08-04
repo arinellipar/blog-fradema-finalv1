@@ -1,53 +1,15 @@
 // src/app/api/upload/image/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-  HeadBucketCommand,
-} from "@aws-sdk/client-s3";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
-
-// Configuração do AWS S3
-const s3Client = new S3Client({
-  region: process.env.AWS_REGION || "us-east-1",
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "",
-  },
-});
-
-const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || "blog-images";
-const CLOUDFRONT_DOMAIN = process.env.AWS_CLOUDFRONT_DOMAIN;
 
 // Configuração do upload local
 const UPLOAD_DIR = join(process.cwd(), "public/uploads");
 
 /**
- * Verificar se o AWS S3 está configurado e acessível
- */
-async function isS3Available() {
-  try {
-    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-      return false;
-    }
-
-    const headBucketCommand = new HeadBucketCommand({
-      Bucket: BUCKET_NAME,
-    });
-    await s3Client.send(headBucketCommand);
-    return true;
-  } catch (error) {
-    console.log("⚠️ S3 não disponível, usando fallback local");
-    return false;
-  }
-}
-
-/**
- * Upload local como fallback
+ * Upload local de imagem
  */
 async function uploadLocal(file: File) {
   // Garantir que o diretório existe
@@ -77,7 +39,7 @@ async function uploadLocal(file: File) {
 }
 
 /**
- * Upload de imagem para o AWS S3 ou local
+ * Upload de imagem (sempre local por enquanto)
  * Suporta JPG, PNG, WebP, GIF
  */
 export async function POST(request: NextRequest) {
@@ -121,86 +83,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Tentar usar S3 primeiro
-    const s3Available = await isS3Available();
+    console.log("📁 Usando upload local");
 
-    if (s3Available) {
-      console.log("✅ Usando AWS S3");
+    const imageData = await uploadLocal(file);
 
-      // Gerar nome único para o arquivo
-      const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 15);
-      const fileExtension = file.name.split(".").pop();
-      const fileName = `${timestamp}-${randomString}.${fileExtension}`;
+    const response = {
+      success: true,
+      image: imageData,
+    };
 
-      // Path no S3: images/{year}/{month}/{filename}
-      const date = new Date();
-      const storagePath = `images/${date.getFullYear()}/${(date.getMonth() + 1)
-        .toString()
-        .padStart(2, "0")}/${fileName}`;
-
-      console.log("📂 Path no S3:", storagePath);
-
-      // Converter File para ArrayBuffer
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-
-      console.log("📦 Buffer criado, tamanho:", uint8Array.length);
-
-      // Upload para o AWS S3
-      const uploadCommand = new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: storagePath,
-        Body: uint8Array,
-        ContentType: file.type,
-        CacheControl: "public, max-age=31536000", // 1 ano
-        ACL: "public-read",
-      });
-
-      console.log("🚀 Enviando para S3...");
-      await s3Client.send(uploadCommand);
-      console.log("✅ Upload S3 concluído com sucesso!");
-
-      // Gerar URL pública
-      let publicUrl: string;
-      if (CLOUDFRONT_DOMAIN) {
-        // Usar CloudFront se configurado
-        publicUrl = `https://${CLOUDFRONT_DOMAIN}/${storagePath}`;
-        console.log("🌐 URL CloudFront:", publicUrl);
-      } else {
-        // Usar URL direta do S3
-        publicUrl = `https://${BUCKET_NAME}.s3.${
-          process.env.AWS_REGION || "us-east-1"
-        }.amazonaws.com/${storagePath}`;
-        console.log("🌐 URL S3:", publicUrl);
-      }
-
-      const response = {
-        success: true,
-        image: {
-          name: file.name,
-          size: file.size,
-          type: file.type,
-          url: publicUrl,
-          path: storagePath,
-        },
-      };
-
-      console.log("✅ Resposta final:", response);
-      return NextResponse.json(response);
-    } else {
-      console.log("📁 Usando upload local");
-
-      const imageData = await uploadLocal(file);
-
-      const response = {
-        success: true,
-        image: imageData,
-      };
-
-      console.log("✅ Upload local concluído:", response);
-      return NextResponse.json(response);
-    }
+    console.log("✅ Upload local concluído:", response);
+    return NextResponse.json(response);
   } catch (error) {
     console.error("❌ Erro no upload:", error);
 
@@ -221,7 +114,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Deletar imagem do AWS S3 ou local
+ * Deletar imagem local
  */
 export async function DELETE(request: NextRequest) {
   try {
@@ -238,33 +131,16 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Verificar se é um arquivo local ou S3
-    if (filePath.startsWith("/uploads/")) {
-      // Deletar arquivo local
-      const fs = await import("fs/promises");
-      const path = await import("path");
-      const fullPath = path.join(process.cwd(), "public", filePath);
+    // Deletar arquivo local
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const fullPath = path.join(process.cwd(), "public", filePath);
 
-      try {
-        await fs.unlink(fullPath);
-        console.log("✅ Arquivo local deletado:", filePath);
-      } catch (error) {
-        console.log("⚠️ Arquivo local não encontrado:", filePath);
-      }
-    } else {
-      // Deletar do S3
-      const s3Available = await isS3Available();
-      if (s3Available) {
-        console.log("🗑️ Deletando do S3:", filePath);
-        const deleteCommand = new DeleteObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: filePath,
-        });
-        await s3Client.send(deleteCommand);
-        console.log("✅ Arquivo S3 deletado com sucesso!");
-      } else {
-        console.log("⚠️ S3 não disponível, arquivo pode não ter sido deletado");
-      }
+    try {
+      await fs.unlink(fullPath);
+      console.log("✅ Arquivo local deletado:", filePath);
+    } catch (error) {
+      console.log("⚠️ Arquivo local não encontrado:", filePath);
     }
 
     return NextResponse.json({ success: true });
