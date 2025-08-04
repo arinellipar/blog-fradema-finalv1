@@ -66,7 +66,6 @@ async function uploadToS3(file: File) {
     Key: key,
     Body: buffer,
     ContentType: file.type,
-    ACL: "public-read",
   });
   await s3.send(putCommand);
 
