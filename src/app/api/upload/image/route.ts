@@ -5,30 +5,97 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { existsSync } from "fs";
 
-// Configuração do upload local
+// AWS S3
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+} from "@aws-sdk/client-s3";
+
 const UPLOAD_DIR = join(process.cwd(), "public/uploads");
 
-/**
- * Upload local de imagem
- */
+function isVercel() {
+  return process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+}
+
+function isS3Configured() {
+  return (
+    !!process.env.AWS_ACCESS_KEY_ID &&
+    !!process.env.AWS_SECRET_ACCESS_KEY &&
+    !!process.env.AWS_REGION &&
+    !!process.env.AWS_S3_BUCKET_NAME
+  );
+}
+
+function getS3Client() {
+  return new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    },
+  });
+}
+
+function getS3Bucket() {
+  return process.env.AWS_S3_BUCKET_NAME!;
+}
+
+function getS3PublicUrl(key: string) {
+  if (process.env.AWS_CLOUDFRONT_DOMAIN) {
+    return `https://${process.env.AWS_CLOUDFRONT_DOMAIN}/${key}`;
+  }
+  return `https://${getS3Bucket()}.s3.${
+    process.env.AWS_REGION
+  }.amazonaws.com/${key}`;
+}
+
+async function uploadToS3(file: File) {
+  const s3 = getS3Client();
+  const bucket = getS3Bucket();
+  const timestamp = Date.now();
+  const randomString = Math.random().toString(36).substring(2, 15);
+  const fileExtension = file.name.split(".").pop();
+  const fileName = `${timestamp}-${randomString}.${fileExtension}`;
+  const key = fileName;
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  const putCommand = new PutObjectCommand({
+    Bucket: bucket,
+    Key: key,
+    Body: buffer,
+    ContentType: file.type,
+    ACL: "public-read",
+  });
+  await s3.send(putCommand);
+
+  return {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    url: getS3PublicUrl(key),
+    path: key,
+  };
+}
+
 async function uploadLocal(file: File) {
-  // Garantir que o diretório existe
+  if (isVercel()) {
+    throw new Error(
+      "Upload local não é suportado no Vercel. Configure AWS S3."
+    );
+  }
   if (!existsSync(UPLOAD_DIR)) {
     await mkdir(UPLOAD_DIR, { recursive: true });
   }
-
-  // Gerar nome único
   const timestamp = Date.now();
   const randomString = Math.random().toString(36).substring(2, 15);
   const fileExtension = file.name.split(".").pop();
   const fileName = `${timestamp}-${randomString}.${fileExtension}`;
   const filePath = join(UPLOAD_DIR, fileName);
-
-  // Converter e salvar arquivo
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
   await writeFile(filePath, buffer);
-
   return {
     name: file.name,
     size: file.size,
@@ -38,116 +105,95 @@ async function uploadLocal(file: File) {
   };
 }
 
-/**
- * Upload de imagem (sempre local por enquanto)
- * Suporta JPG, PNG, WebP, GIF
- */
 export async function POST(request: NextRequest) {
-  console.log("🔄 API /api/upload/image chamada");
-  console.log("📋 Headers:", Object.fromEntries(request.headers.entries()));
-
   try {
-    console.log("🚀 Iniciando upload de imagem...");
-
     const formData = await request.formData();
     const file = formData.get("file") as File;
-
     if (!file) {
-      console.error("❌ Nenhum arquivo fornecido");
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
-
-    console.log("📁 Arquivo recebido:", {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    });
-
-    // Validar tipo de arquivo
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
     if (!allowedTypes.includes(file.type)) {
-      console.error("❌ Tipo de arquivo inválido:", file.type);
       return NextResponse.json(
         { error: "Invalid file type. Allowed: JPG, PNG, WebP, GIF" },
         { status: 400 }
       );
     }
-
-    // Validar tamanho (5MB max)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
-      console.error("❌ Arquivo muito grande:", file.size, "bytes");
       return NextResponse.json(
         { error: "File too large. Maximum size is 5MB" },
         { status: 400 }
       );
     }
 
-    console.log("📁 Usando upload local");
-
-    const imageData = await uploadLocal(file);
-
-    const response = {
-      success: true,
-      image: imageData,
-    };
-
-    console.log("✅ Upload local concluído:", response);
-    return NextResponse.json(response);
-  } catch (error) {
-    console.error("❌ Erro no upload:", error);
-
-    // Log detalhado do erro
-    if (error instanceof Error) {
-      console.error("📝 Mensagem de erro:", error.message);
-      console.error("📚 Stack trace:", error.stack);
+    // S3 em produção, local em dev
+    if (isS3Configured() && isVercel()) {
+      try {
+        const imageData = await uploadToS3(file);
+        return NextResponse.json({ success: true, image: imageData });
+      } catch (err) {
+        return NextResponse.json(
+          {
+            error: "Erro ao enviar para o S3",
+            details: (err as Error).message,
+          },
+          { status: 500 }
+        );
+      }
+    } else {
+      // Local
+      try {
+        const imageData = await uploadLocal(file);
+        return NextResponse.json({ success: true, image: imageData });
+      } catch (err) {
+        return NextResponse.json(
+          { error: "Erro no upload local", details: (err as Error).message },
+          { status: 500 }
+        );
+      }
     }
-
+  } catch (error) {
     return NextResponse.json(
-      {
-        error: "Failed to upload image",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to upload image", details: (error as Error).message },
       { status: 500 }
     );
   }
 }
 
-/**
- * Deletar imagem local
- */
 export async function DELETE(request: NextRequest) {
   try {
-    console.log("🗑️ Iniciando deleção de imagem...");
-
     const { searchParams } = new URL(request.url);
     const filePath = searchParams.get("path");
-
     if (!filePath) {
-      console.error("❌ Caminho do arquivo não fornecido");
       return NextResponse.json(
         { error: "File path not provided" },
         { status: 400 }
       );
     }
-
-    // Deletar arquivo local
-    const fs = await import("fs/promises");
-    const path = await import("path");
-    const fullPath = path.join(process.cwd(), "public", filePath);
-
-    try {
-      await fs.unlink(fullPath);
-      console.log("✅ Arquivo local deletado:", filePath);
-    } catch (error) {
-      console.log("⚠️ Arquivo local não encontrado:", filePath);
+    if (isS3Configured() && isVercel()) {
+      // S3
+      const s3 = getS3Client();
+      const bucket = getS3Bucket();
+      const delCommand = new DeleteObjectCommand({
+        Bucket: bucket,
+        Key: filePath,
+      });
+      await s3.send(delCommand);
+      return NextResponse.json({ success: true });
+    } else {
+      // Local
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const fullPath = path.join(process.cwd(), "public", filePath);
+      try {
+        await fs.unlink(fullPath);
+      } catch {}
+      return NextResponse.json({ success: true });
     }
-
-    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ Erro na deleção:", error);
     return NextResponse.json(
-      { error: "Failed to delete image" },
+      { error: "Failed to delete image", details: (error as Error).message },
       { status: 500 }
     );
   }

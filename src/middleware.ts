@@ -145,6 +145,7 @@ const ROUTE_SECURITY_MATRIX: RouteSecurityMatrix = {
     "/api/upload",
     "/api/comments/upload",
     "/api/test-upload",
+    "/api/test-production",
 
     // System Health & Monitoring
     "/api/health",
