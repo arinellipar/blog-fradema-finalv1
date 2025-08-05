@@ -95,7 +95,7 @@ const useFileUpload = () => {
       }, 200);
 
       // Fazer upload direto para a API
-      const response = await fetch("/api/upload/image", {
+      const response = await fetch("/api/upload-cloudinary", {
         method: "POST",
         body: formData,
       });
