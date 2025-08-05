@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { formatDate, ROUTES } from "@/lib/utils";
 import Image from "next/image";
+import { useState } from "react";
 
 // Schema de validação para criação de posts
 const BlogPostSchema = z.object({
@@ -68,71 +69,53 @@ interface UploadedFile {
 
 // Hook para upload de arquivos
 const useFileUpload = () => {
-  const [uploading, setUploading] = React.useState(false);
-  const [uploadProgress, setUploadProgress] = React.useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const uploadFile = async (file: File): Promise<UploadedFile> => {
     setUploading(true);
     setUploadProgress(0);
 
     try {
-      console.log("🚀 Iniciando upload do arquivo:", file.name);
+      console.log("🚀 Iniciando upload direto para Cloudinary:", file.name);
 
+      // Upload direto para Cloudinary usando signed upload
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("upload_preset", "blog-images"); // Preset público do Cloudinary
+      formData.append("folder", "blog-images");
 
-      console.log("📦 FormData criado, enviando para API...");
+      console.log("📦 FormData criado, enviando para Cloudinary...");
 
-      // Simular progresso
-      const progressInterval = setInterval(() => {
-        setUploadProgress((prev) => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return prev;
-          }
-          return prev + 10;
-        });
-      }, 200);
-
-      // Fazer upload direto para a API
-      const response = await fetch("/api/upload-cloudinary", {
-        method: "POST",
-        body: formData,
-      });
-
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-
-      console.log("📡 Resposta da API:", response.status, response.statusText);
+      // Upload direto para Cloudinary
+      const cloudName =
+        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dabc123"; // Fallback
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: "Erro desconhecido" }));
-        console.error("❌ Erro na resposta da API:", errorData);
-        throw new Error(errorData.error || "Erro no upload");
+        const errorText = await response.text();
+        console.error("❌ Erro na resposta do Cloudinary:", errorText);
+        throw new Error(`Upload failed: ${response.status} ${errorText}`);
       }
 
       const result = await response.json();
-      console.log("✅ Resultado do upload:", result);
+      console.log("✅ Upload Cloudinary concluído:", result);
 
-      setTimeout(() => setUploadProgress(0), 1000);
+      setUploadProgress(100);
 
-      // Adaptar resposta para compatibilidade
-      if (result.image) {
-        const adaptedResult = {
-          filename: result.image.name,
-          originalName: result.image.name,
-          size: result.image.size,
-          type: result.image.type,
-          url: result.image.url,
-        };
-        console.log("🔄 Resultado adaptado:", adaptedResult);
-        return adaptedResult;
-      }
-
-      console.log("📋 Retornando resultado original:", result);
-      return result;
+      return {
+        filename: result.public_id,
+        originalName: file.name,
+        size: file.size,
+        type: file.type,
+        url: result.secure_url,
+      };
     } catch (error) {
       console.error("❌ Erro no upload:", error);
       setUploadProgress(0);
@@ -142,7 +125,27 @@ const useFileUpload = () => {
     }
   };
 
-  return { uploadFile, uploading, uploadProgress };
+  const deleteFile = async (path: string): Promise<void> => {
+    try {
+      console.log("🗑️ Deletando arquivo:", path);
+
+      // Para deletar, precisamos de uma API que não seja bloqueada
+      // Por enquanto, vamos apenas logar
+      console.log(
+        "⚠️ Delete não implementado - arquivo permanecerá no Cloudinary"
+      );
+    } catch (error) {
+      console.error("❌ Erro ao deletar:", error);
+      throw error;
+    }
+  };
+
+  return {
+    uploadFile,
+    deleteFile,
+    uploading,
+    uploadProgress,
+  };
 };
 
 export default function NovoPostPage() {

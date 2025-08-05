@@ -161,6 +161,15 @@ const clientConfig = {
   },
 };
 
+// Configurações do Cloudinary
+export const CLOUDINARY_CONFIG = {
+  cloudName:
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    process.env.CLOUDINARY_CLOUD_NAME,
+  apiKey: process.env.CLOUDINARY_API_KEY,
+  apiSecret: process.env.CLOUDINARY_API_SECRET,
+};
+
 // ===== CONFIGURAÇÃO PRINCIPAL =====
 
 /**
