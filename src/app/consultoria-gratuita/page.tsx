@@ -5,9 +5,24 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Calendar, Clock, MapPin, Phone, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { PageLoadingSpinner } from "@/components/ui/loading-spinner";
 
 export default function ConsultoriaGratuitaPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    // Simular carregamento inicial
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading) {
+    return <PageLoadingSpinner text="Carregando consultoria gratuita..." />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
