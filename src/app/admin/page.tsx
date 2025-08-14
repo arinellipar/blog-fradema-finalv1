@@ -201,7 +201,9 @@ export default function AdminPage() {
   // Carregar usuários
   const loadUsers = async () => {
     try {
-      const response = await fetch("/api/admin/users");
+      const response = await fetch("/api/admin/users", {
+        credentials: "include",
+      });
       const data = await response.json();
 
       if (response.ok) {
@@ -236,7 +238,9 @@ export default function AdminPage() {
       };
 
       try {
-        const postsResponse = await fetch("/api/admin/posts");
+        const postsResponse = await fetch("/api/admin/posts", {
+          credentials: "include",
+        });
         if (postsResponse.ok) {
           const postsData = await postsResponse.json();
           postsStats = {
@@ -333,6 +337,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
       });
@@ -376,6 +381,7 @@ export default function AdminPage() {
     try {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       const data = await response.json();

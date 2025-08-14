@@ -1,4 +1,4 @@
-# Configuração do Cloudinary para Upload de Imagens
+# Configuração Completa do Cloudinary para Upload de Imagens
 
 ## 🚀 **Por que Cloudinary?**
 
@@ -8,7 +8,7 @@
 - ✅ **Transformações automáticas** (redimensionamento, otimização)
 - ✅ **Fácil de configurar**
 
-## 📋 **Passo a Passo**
+## 📋 **Passo a Passo Completo**
 
 ### **1. Criar conta no Cloudinary**
 
@@ -20,51 +20,72 @@
 ### **2. Obter credenciais**
 
 No dashboard do Cloudinary, você encontrará:
-- **Cloud Name**
-- **API Key**
-- **API Secret**
+- **Cloud Name** (ex: `dabc123`)
+- **API Key** (ex: `123456789012345`)
+- **API Secret** (ex: `abcdefghijklmnopqrstuvwxyz`)
 
-### **3. Configurar variáveis de ambiente no Vercel**
+### **3. Configurar Upload Preset (Recomendado)**
+
+1. **Acesse o Dashboard do Cloudinary**
+2. **Vá em "Settings"** → **"Upload"**
+3. **Role até "Upload presets"**
+4. **Clique em "Add upload preset"**
+5. **Configure:**
+   - **Name**: `blog-images`
+   - **Signing Mode**: `Unsigned`
+   - **Folder**: `blog-images`
+   - **Access Mode**: `public`
+
+### **4. Configurar variáveis de ambiente**
+
+#### **Para desenvolvimento local (.env.local):**
+
+```bash
+# Cloudinary Configuration
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloud-name
+```
+
+#### **Para produção (Vercel):**
 
 No painel do Vercel, adicione estas variáveis:
 
-| Nome | Valor |
-|------|-------|
-| `CLOUDINARY_CLOUD_NAME` | Seu cloud name |
-| `CLOUDINARY_API_KEY` | Sua API key |
-| `CLOUDINARY_API_SECRET` | Seu API secret |
+| Nome | Valor | Descrição |
+|------|-------|-----------|
+| `CLOUDINARY_CLOUD_NAME` | Seu cloud name | Para uploads server-side |
+| `CLOUDINARY_API_KEY` | Sua API key | Para uploads server-side |
+| `CLOUDINARY_API_SECRET` | Seu API secret | Para uploads server-side |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | Seu cloud name | Para uploads client-side |
 
-### **4. Deploy**
+### **5. Testar a configuração**
 
-Faça o deploy do projeto. A nova API `/api/upload-cloudinary` estará disponível.
-
-## 🧪 **Teste**
-
+#### **Teste local:**
 ```bash
-curl -X POST -F "file=@test.jpg" https://seu-dominio.vercel.app/api/upload-cloudinary
+npm run dev
 ```
 
-**Resposta esperada:**
-```json
-{
-  "success": true,
-  "image": {
-    "name": "test.jpg",
-    "size": 12345,
-    "type": "image/jpeg",
-    "url": "https://res.cloudinary.com/seu-cloud-name/image/upload/v1234567890/blog-images/blog-1234567890-abc123.jpg",
-    "path": "blog-images/blog-1234567890-abc123"
-  }
-}
-```
+#### **Teste de upload:**
+1. Acesse: `http://localhost:3000/dashboard/novo-post`
+2. Tente fazer upload de uma imagem
+3. Verifique no console se aparece:
+   ```
+   ✅ Upload Cloudinary concluído: {secure_url: "...", public_id: "..."}
+   ```
 
-## 🔧 **Vantagens do Cloudinary**
+## 🔧 **Como Funciona**
 
-1. **URLs públicas**: As imagens são automaticamente públicas
-2. **CDN global**: Carregamento rápido em qualquer lugar
-3. **Transformações**: Pode redimensionar automaticamente
-4. **Otimização**: Comprime imagens automaticamente
-5. **Sem configuração complexa**: Funciona imediatamente
+### **Upload Server-Side (API Route)**
+- Usa: `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- Rota: `/api/upload-cloudinary`
+- Mais seguro, com validação server-side
+
+### **Upload Client-Side (Frontend)**
+- Usa: `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`
+- Upload direto para Cloudinary
+- Contorna bloqueios do Vercel
+- Requer upload preset configurado
 
 ## 📊 **Limites gratuitos**
 
@@ -74,11 +95,29 @@ curl -X POST -F "file=@test.jpg" https://seu-dominio.vercel.app/api/upload-cloud
 
 **Perfeito para blogs e sites pequenos/médios!**
 
-## 🎯 **Próximos passos**
+## 🎯 **Exemplo de Configuração**
+
+```bash
+# .env.local
+CLOUDINARY_CLOUD_NAME=dabc123
+CLOUDINARY_API_KEY=123456789012345
+CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dabc123
+```
+
+## ⚠️ **Importante**
+
+1. **Nunca commite** suas credenciais no Git
+2. **Use .env.local** para desenvolvimento local
+3. **Configure no Vercel** para produção
+4. **O NEXT_PUBLIC_*** é exposto no frontend, mas é seguro para cloud name
+
+## 🚀 **Próximos passos**
 
 1. **Crie a conta no Cloudinary**
-2. **Configure as variáveis no Vercel**
-3. **Faça o deploy**
+2. **Configure o upload preset**
+3. **Adicione as variáveis de ambiente**
 4. **Teste o upload**
+5. **Deploy para produção**
 
-**O upload funcionará imediatamente sem problemas de autenticação!** 
+**O upload funcionará imediatamente sem problemas de autenticação!**

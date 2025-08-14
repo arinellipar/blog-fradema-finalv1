@@ -206,6 +206,7 @@ export function BlogPostForm() {
       // Simula chamada à API
       const response = await fetch("/api/posts", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

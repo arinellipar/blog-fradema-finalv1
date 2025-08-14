@@ -96,6 +96,7 @@ export function CommentSection({
     try {
       const response = await fetch("/api/comments", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -142,6 +143,7 @@ export function CommentSection({
     try {
       const response = await fetch("/api/comments", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

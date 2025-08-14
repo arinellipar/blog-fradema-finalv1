@@ -188,7 +188,9 @@ export function PostsManagement({
   const loadPosts = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/admin/posts");
+      const response = await fetch("/api/admin/posts", {
+        credentials: "include",
+      });
       const data = await response.json();
 
       if (response.ok) {
@@ -281,6 +283,7 @@ export function PostsManagement({
     try {
       const response = await fetch(`/api/admin/posts/${selectedPost.id}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editData),
       });
@@ -319,6 +322,7 @@ export function PostsManagement({
     try {
       const response = await fetch(`/api/admin/posts/${postId}`, {
         method: "PUT",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ published }),
       });
@@ -357,6 +361,7 @@ export function PostsManagement({
     try {
       const response = await fetch(`/api/admin/posts/${selectedPost.id}`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       const data = await response.json();

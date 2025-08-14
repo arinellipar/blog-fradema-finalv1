@@ -198,7 +198,9 @@ export default function RealTimeDashboard() {
   // Carregar número de comentários pendentes
   const loadPendingCommentsCount = async () => {
     try {
-      const response = await fetch("/api/comments/pending");
+      const response = await fetch("/api/comments/pending", {
+        credentials: "include",
+      });
       if (response.ok) {
         const data = await response.json();
         setPendingCommentsCount(data.length);

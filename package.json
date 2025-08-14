@@ -14,6 +14,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:clear-seed": "node scripts/clear-seed-users.js",
     "db:test-admin": "node scripts/test-admin-creation.js",
+    "setup:cloudinary": "node scripts/setup-cloudinary.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {

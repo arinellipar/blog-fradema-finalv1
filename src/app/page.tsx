@@ -44,7 +44,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import AnimatedCounter from "@/components/ui/animated-counter";
-import { SectionLoadingSpinner } from "@/components/ui/loading-spinner";
 
 // Import hooks e utils
 import { useAuth } from "@/contexts/auth-context";
@@ -312,16 +311,6 @@ export default function ModernLandingPage() {
   const { user, isLoading: authLoading, logout } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  const [servicesLoading, setServicesLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    // Simular carregamento dos serviços
-    const timer = setTimeout(() => {
-      setServicesLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
-  }, []);
 
   // Estados
   const [email, setEmail] = React.useState("");
@@ -773,11 +762,8 @@ export default function ModernLandingPage() {
             </p>
           </motion.div>
 
-          {servicesLoading ? (
-            <SectionLoadingSpinner text="Carregando nossos serviços..." />
-          ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {[
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[
               {
                 icon: Calculator,
                 title: "Planejamento Tributário Estratégico",
@@ -895,8 +881,7 @@ export default function ModernLandingPage() {
                 </Card>
               </motion.div>
             ))}
-            </div>
-          )}
+          </div>
         </div>
       </section>
 

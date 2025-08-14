@@ -330,6 +330,7 @@ export default function NovoPostPage() {
       // Enviar para API
       const response = await fetch("/api/posts", {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },

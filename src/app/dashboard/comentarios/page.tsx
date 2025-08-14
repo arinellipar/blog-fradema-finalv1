@@ -70,7 +70,9 @@ export default function ComentariosPage() {
   const loadPendingComments = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/comments/pending");
+      const response = await fetch("/api/comments/pending", {
+        credentials: "include",
+      });
       const data = await response.json();
 
       if (response.ok) {
@@ -100,6 +102,7 @@ export default function ComentariosPage() {
     try {
       const response = await fetch(`/api/comments/${commentId}/approve`, {
         method: "PUT",
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -128,6 +131,7 @@ export default function ComentariosPage() {
     try {
       const response = await fetch(`/api/comments/${commentId}/approve`, {
         method: "DELETE",
+        credentials: "include",
       });
 
       if (response.ok) {
