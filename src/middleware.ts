@@ -139,6 +139,7 @@ const ROUTE_SECURITY_MATRIX: RouteSecurityMatrix = {
     "/api/categories/public",
     "/api/tags/public",
     "/api/comments/public",
+    "/api/comments", // GET é público, POST requer autenticação
 
     // File Upload APIs
     "/api/upload/image",
@@ -148,6 +149,9 @@ const ROUTE_SECURITY_MATRIX: RouteSecurityMatrix = {
     "/api/test-production",
     "/upload/image",
     "/api/upload-cloudinary",
+
+    // External APIs (Cloudinary)
+    "https://api.cloudinary.com",
 
     // System Health & Monitoring
     "/api/health",
@@ -771,18 +775,14 @@ function createSecureSuccessResponse(
  * @returns NextResponse with appropriate security enforcement
  */
 export async function middleware(request: NextRequest): Promise<NextResponse> {
-  // TEMPORARILY DISABLED FOR TESTING
-  return NextResponse.next();
-  
-  // ORIGINAL MIDDLEWARE CODE COMMENTED OUT
-  /*
+  // MIDDLEWARE RE-ENABLED - CRITICAL FOR AUTHENTICATION
   const startTime = performance.now();
   const correlationId = crypto.randomUUID();
-  
+
   try {
     // Early termination for static assets and health checks
     const { pathname } = request.nextUrl;
-    
+
     if (
       pathname.startsWith("/_next/") ||
       pathname.startsWith("/favicon.ico") ||
@@ -793,7 +793,8 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     }
 
     // Route classification with caching
-    const routeType = RouteClassificationCache.get(pathname) || classifyRoute(pathname);
+    const routeType =
+      RouteClassificationCache.get(pathname) || classifyRoute(pathname);
     if (routeType) {
       RouteClassificationCache.set(pathname, routeType);
     }
@@ -813,12 +814,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     // Extract and validate JWT token
     const token = extractTokenFromCookie(request);
     if (!token) {
-      console.log(`[${correlationId}] No token found for protected route: ${pathname}`);
-      
+      console.log(
+        `[${correlationId}] No token found for protected route: ${pathname}`
+      );
+
       if (routeType === "authRestricted") {
         return createSecureSuccessResponse(request, { contentType: "web" });
       }
-      
+
       return createSecureRedirectResponse("/auth/login", request, {
         preserveQuery: true,
         securityLevel: "standard",
@@ -828,12 +831,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     // Verify token and perform authorization
     const authResult = await performAuthorizationCheck(token, "USER");
     if (!authResult.authorized) {
-      console.log(`[${correlationId}] Token verification failed: ${authResult.error?.message}`);
-      
+      console.log(
+        `[${correlationId}] Token verification failed: ${authResult.error?.message}`
+      );
+
       if (routeType === "authRestricted") {
         return createSecureSuccessResponse(request, { contentType: "web" });
       }
-      
+
       return createSecureRedirectResponse("/auth/login", request, {
         preserveQuery: true,
         securityLevel: "standard",
@@ -861,7 +866,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     });
   } catch (error) {
     console.error(`[${correlationId}] Middleware error:`, error);
-    
+
     // Graceful fallback for critical errors
     if (request.nextUrl.pathname.startsWith("/api/")) {
       return createStructuredApiErrorResponse(
@@ -871,16 +876,19 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
         { correlationId }
       );
     }
-    
+
     return createSecureRedirectResponse("/auth/login", request, {
       preserveQuery: true,
       securityLevel: "minimal",
     });
   } finally {
     const executionTime = performance.now() - startTime;
-    console.log(`[${correlationId}] Middleware execution time: ${executionTime.toFixed(2)}ms`);
+    console.log(
+      `[${correlationId}] Middleware execution time: ${executionTime.toFixed(
+        2
+      )}ms`
+    );
   }
-  */
 }
 
 // ===== OPTIMIZED MATCHER CONFIGURATION =====

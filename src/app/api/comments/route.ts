@@ -64,10 +64,32 @@ export async function GET(request: NextRequest) {
 // POST /api/comments - Criar novo comentário
 export async function POST(request: NextRequest) {
   try {
+    console.log("📝 Tentativa de criar comentário");
+    console.log(
+      "🍪 Cookies recebidos:",
+      request.cookies.getAll().map((c) => c.name)
+    );
+
     // Verificar autenticação
     const authResult = await getAuthGuard(request);
+    console.log("🔐 Resultado da autenticação:", {
+      isAuthenticated: authResult.isAuthenticated,
+      userId: authResult.user?.id,
+      userEmail: authResult.user?.email,
+      userRole: authResult.user?.role,
+      error: authResult.error,
+    });
+
     if (!authResult.isAuthenticated || !authResult.user) {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      console.log("❌ Usuário não autenticado");
+      return NextResponse.json(
+        {
+          error: "Não autorizado",
+          details:
+            authResult.error || "Usuário deve estar logado para comentar",
+        },
+        { status: 401 }
+      );
     }
 
     const body = await request.json();
@@ -125,6 +147,13 @@ export async function POST(request: NextRequest) {
           },
         },
       },
+    });
+
+    console.log("✅ Comentário criado com sucesso:", {
+      id: comment.id,
+      userRole: authResult.user.role,
+      approved: authResult.user.role === "ADMIN",
+      content: comment.content.substring(0, 50) + "...",
     });
 
     return NextResponse.json(

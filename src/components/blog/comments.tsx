@@ -178,6 +178,7 @@ export function Comments({ postId, postTitle }: CommentsProps) {
     try {
       const response = await fetch(`/api/comments`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -233,6 +234,7 @@ export function Comments({ postId, postTitle }: CommentsProps) {
     try {
       const response = await fetch(`/api/comments`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -584,7 +586,8 @@ export function Comments({ postId, postTitle }: CommentsProps) {
                 aparecerem publicamente.
               </p>
               <p className="mt-2 font-medium">
-                💡 Dica: Acesse o dashboard para gerenciar comentários pendentes.
+                💡 Dica: Acesse o dashboard para gerenciar comentários
+                pendentes.
               </p>
             </div>
           </CardContent>

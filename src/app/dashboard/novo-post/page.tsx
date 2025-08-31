@@ -77,44 +77,40 @@ const useFileUpload = () => {
     setUploadProgress(0);
 
     try {
-      console.log("🚀 Iniciando upload direto para Cloudinary:", file.name);
+      console.log("🚀 Iniciando upload para Cloudinary:", file.name);
 
-      // Upload direto para Cloudinary usando signed upload
+      // Usar API interna para upload mais confiável
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "blog-images"); // Preset público do Cloudinary
-      formData.append("folder", "blog-images");
 
-      console.log("📦 FormData criado, enviando para Cloudinary...");
+      console.log("📦 Enviando para API interna...");
 
-      // Upload direto para Cloudinary
-      const cloudName =
-        process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || "dabc123"; // Fallback
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      // Upload através da API interna (mais confiável)
+      const response = await fetch("/api/upload-cloudinary", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("❌ Erro na resposta do Cloudinary:", errorText);
-        throw new Error(`Upload failed: ${response.status} ${errorText}`);
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: "Erro desconhecido" }));
+        console.error("❌ Erro no upload:", errorData);
+        throw new Error(errorData.error || `Upload failed: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log("✅ Upload Cloudinary concluído:", result);
+      console.log("✅ Upload concluído:", result);
 
       setUploadProgress(100);
 
       return {
-        filename: result.public_id,
-        originalName: file.name,
-        size: file.size,
-        type: file.type,
-        url: result.secure_url,
+        filename: result.image.path,
+        originalName: result.image.name,
+        size: result.image.size,
+        type: result.image.type,
+        url: result.image.url,
       };
     } catch (error) {
       console.error("❌ Erro no upload:", error);
