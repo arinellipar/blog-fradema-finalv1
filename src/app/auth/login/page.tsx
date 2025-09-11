@@ -36,7 +36,6 @@ export default function LoginPage() {
       if (response.ok) {
         // Login bem-sucedido
         router.replace("/");
-        window.location.reload();
       } else {
         // Erro no login
         setError(data.message || "Erro no login. Verifique suas credenciais.");

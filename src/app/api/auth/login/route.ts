@@ -31,7 +31,12 @@ export async function POST(request: NextRequest) {
     if (!user) {
       console.log(`[LOGIN] Usuário não encontrado: ${email}`);
       return NextResponse.json(
-        { error: "Email ou senha incorretos" },
+        {
+          error: {
+            message: "Esse usuário não existe",
+            code: "USER_NOT_FOUND",
+          },
+        },
         { status: 401 }
       );
     }
@@ -42,7 +47,12 @@ export async function POST(request: NextRequest) {
     if (!isPasswordValid) {
       console.log(`[LOGIN] Senha inválida para usuário: ${email}`);
       return NextResponse.json(
-        { error: "Email ou senha incorretos" },
+        {
+          error: {
+            message: "Login ou senha incorretos",
+            code: "INVALID_PASSWORD",
+          },
+        },
         { status: 401 }
       );
     }

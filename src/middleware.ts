@@ -135,7 +135,9 @@ const ROUTE_SECURITY_MATRIX: RouteSecurityMatrix = {
     "/api/auth/change-password",
 
     // Public Content APIs
+    "/api/posts", // GET é público, POST requer autenticação
     "/api/posts/public",
+    "/api/categories", // GET é público, POST requer autenticação
     "/api/categories/public",
     "/api/tags/public",
     "/api/comments/public",

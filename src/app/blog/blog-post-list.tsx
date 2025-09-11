@@ -29,10 +29,19 @@ import {
   BookOpen,
   ArrowUp,
   AlertCircle,
+  Building2,
+  Calculator,
+  User,
+  BarChart3,
+  Tags,
+  MessageSquare,
+  Users,
+  Clock,
+  Flame,
+  Scale,
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { BLOG_CATEGORIES } from "@/lib/utils";
 
 interface BlogPost {
   id: string;
@@ -43,7 +52,8 @@ interface BlogPost {
   mainImage?: string;
   authorName: string;
   authorAvatar?: string;
-  category: string;
+  category: string; // Primeira categoria para compatibilidade
+  categories?: string[]; // Array de todas as categorias
   publishDate: string;
   readingTime?: number;
   views?: number;
@@ -63,6 +73,88 @@ interface Comment {
 
 const POSTS_PER_PAGE = 6;
 
+// Mapeamento de ícones e cores para categorias
+const getCategoryConfig = (slug: string) => {
+  const configs: Record<string, any> = {
+    tributario: {
+      icon: Building2,
+      gradient: "from-blue-500 via-blue-600 to-indigo-700",
+      glowColor: "shadow-blue-500/25",
+      hoverGlow: "hover:shadow-blue-500/40",
+      accent: "bg-blue-400",
+      iconGlow: "shadow-blue-400/50",
+    },
+    fiscal: {
+      icon: Calculator,
+      gradient: "from-emerald-500 via-green-600 to-teal-700",
+      glowColor: "shadow-emerald-500/25",
+      hoverGlow: "hover:shadow-emerald-500/40",
+      accent: "bg-emerald-400",
+      iconGlow: "shadow-emerald-400/50",
+    },
+    contabil: {
+      icon: BarChart3,
+      gradient: "from-orange-500 via-amber-600 to-yellow-600",
+      glowColor: "shadow-orange-500/25",
+      hoverGlow: "hover:shadow-orange-500/40",
+      accent: "bg-orange-400",
+      iconGlow: "shadow-orange-400/50",
+    },
+    legislacao: {
+      icon: Scale,
+      gradient: "from-violet-500 via-purple-600 to-indigo-700",
+      glowColor: "shadow-violet-500/25",
+      hoverGlow: "hover:shadow-violet-500/40",
+      accent: "bg-violet-400",
+      iconGlow: "shadow-violet-400/50",
+    },
+    "reforma-tributaria": {
+      icon: Building2,
+      gradient: "from-blue-600 via-blue-700 to-indigo-800",
+      glowColor: "shadow-blue-600/25",
+      hoverGlow: "hover:shadow-blue-600/40",
+      accent: "bg-blue-500",
+      iconGlow: "shadow-blue-500/50",
+    },
+    "imposto-renda": {
+      icon: Calculator,
+      gradient: "from-green-600 via-emerald-700 to-teal-800",
+      glowColor: "shadow-green-600/25",
+      hoverGlow: "hover:shadow-green-600/40",
+      accent: "bg-green-500",
+      iconGlow: "shadow-green-500/50",
+    },
+    "francisco-arrighi": {
+      icon: User,
+      gradient: "from-purple-600 via-violet-700 to-indigo-800",
+      glowColor: "shadow-purple-600/25",
+      hoverGlow: "hover:shadow-purple-600/40",
+      accent: "bg-purple-500",
+      iconGlow: "shadow-purple-500/50",
+    },
+    "atualizacoes-tributarias": {
+      icon: BarChart3,
+      gradient: "from-orange-600 via-red-600 to-pink-700",
+      glowColor: "shadow-orange-600/25",
+      hoverGlow: "hover:shadow-orange-600/40",
+      accent: "bg-orange-500",
+      iconGlow: "shadow-orange-500/50",
+    },
+  };
+
+  // Configuração padrão para categorias não mapeadas
+  return (
+    configs[slug] || {
+      icon: Tags,
+      gradient: "from-gray-500 via-gray-600 to-gray-700",
+      glowColor: "shadow-gray-500/25",
+      hoverGlow: "hover:shadow-gray-500/40",
+      accent: "bg-gray-400",
+      iconGlow: "shadow-gray-400/50",
+    }
+  );
+};
+
 export function BlogPostList() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -77,6 +169,10 @@ export function BlogPostList() {
   const [posts, setPosts] = React.useState<BlogPost[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  // Estado para categorias dinâmicas
+  const [categories, setCategories] = React.useState<any[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = React.useState(false);
 
   // Buscar posts da API quando componente montar
   React.useEffect(() => {
@@ -96,6 +192,12 @@ export function BlogPostList() {
 
         // Converter posts da API para o formato esperado pelo componente
         const convertedPosts: BlogPost[] = apiPosts.map((post: any) => {
+          // Extrair todas as categorias do post
+          const allCategories =
+            post.categories
+              ?.map((cat: any) => cat.category?.name)
+              .filter(Boolean) || [];
+
           return {
             id: post.id,
             title: post.title,
@@ -105,7 +207,8 @@ export function BlogPostList() {
             mainImage: post.mainImage || null,
             authorName: post.author?.name || "Autor desconhecido",
             authorAvatar: post.author?.avatar || null,
-            category: post.tags?.[0]?.tag?.name || "Geral",
+            category: allCategories[0] || "Geral", // Primeira categoria para compatibilidade
+            categories: allCategories, // Array de todas as categorias
             publishDate: post.publishedAt || post.createdAt,
             readingTime: post.readingTime || 5,
             views: post._count?.PostView || 0,
@@ -125,6 +228,27 @@ export function BlogPostList() {
     };
 
     loadPosts();
+  }, []);
+
+  // Buscar categorias da API
+  React.useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        setCategoriesLoading(true);
+        const response = await fetch("/api/categories");
+        if (!response.ok) {
+          throw new Error("Erro ao buscar categorias");
+        }
+        const apiCategories = await response.json();
+        setCategories(apiCategories);
+      } catch (error) {
+        console.error("Erro ao carregar categorias:", error);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    loadCategories();
   }, []);
 
   // Monitora scroll para botão "voltar ao topo"
@@ -153,7 +277,13 @@ export function BlogPostList() {
 
     // Filtro por categoria
     if (selectedCategory !== "all") {
-      filtered = filtered.filter((post) => post.category === selectedCategory);
+      filtered = filtered.filter((post) => {
+        // Verificar se a categoria selecionada está presente nas categorias do post
+        return (
+          post.categories?.includes(selectedCategory) ||
+          post.category === selectedCategory
+        );
+      });
     }
 
     // Ordenação
@@ -195,14 +325,28 @@ export function BlogPostList() {
 
   const getCategoryColor = (category: string) => {
     const colors: Record<string, string> = {
-      Tributário: "bg-blue-100 text-blue-800",
-      Fiscal: "bg-green-100 text-green-800",
-      Contábil: "bg-yellow-100 text-yellow-800",
-      Legislação: "bg-purple-100 text-purple-800",
-      Planejamento: "bg-red-100 text-red-800",
-      Compliance: "bg-orange-100 text-orange-800",
+      // Categorias principais
+      Tributário: "bg-gradient-to-r from-blue-500 to-blue-600 text-white",
+      Fiscal: "bg-gradient-to-r from-green-500 to-green-600 text-white",
+      Contábil: "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white",
+      Legislação: "bg-gradient-to-r from-purple-500 to-purple-600 text-white",
+      "Planejamento Tributário":
+        "bg-gradient-to-r from-red-500 to-red-600 text-white",
+      // Categorias adicionais
+      Compliance: "bg-gradient-to-r from-orange-500 to-orange-600 text-white",
+      "Reforma Tributária":
+        "bg-gradient-to-r from-blue-600 to-blue-700 text-white",
+      "Imposto de Renda":
+        "bg-gradient-to-r from-green-600 to-green-700 text-white",
+      "Matérias Francisco Arrighi":
+        "bg-gradient-to-r from-purple-600 to-purple-700 text-white",
+      "Atualizações Tributárias":
+        "bg-gradient-to-r from-orange-600 to-orange-700 text-white",
     };
-    return colors[category] || "bg-gray-100 text-gray-800";
+    return (
+      colors[category] ||
+      "bg-gradient-to-r from-gray-500 to-gray-600 text-white"
+    );
   };
 
   const scrollToTop = () => {
@@ -211,154 +355,498 @@ export function BlogPostList() {
 
   // Lista de posts com filtros e paginação
   return (
-    <div className="space-y-6">
-      {/* Filtros e Busca */}
-      <Card className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Busca */}
-          <div className="md:col-span-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <Input
-                placeholder="Buscar artigos..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+    <div className="space-y-8">
+      {/* Seções de Categorias Ultra-Modernas 2025 */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {categories.slice(0, 4).map((category, index) => {
+          const config = getCategoryConfig(category.slug);
+          const IconComponent = config.icon;
+
+          return (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, y: 30, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                delay: index * 0.1,
+                type: "spring",
+                stiffness: 100,
+                damping: 15,
+              }}
+              whileHover={{
+                scale: 1.05,
+                y: -8,
+                transition: { type: "spring", stiffness: 300, damping: 20 },
+              }}
+              whileTap={{ scale: 0.98 }}
+              className={`group cursor-pointer relative overflow-hidden rounded-3xl ${config.glowColor} ${config.hoverGlow} hover:shadow-2xl transition-all duration-500`}
+              onClick={() => setSelectedCategory(category.name)}
+            >
+              {/* Glassmorphism Background */}
+              <div className="absolute inset-0 bg-white/10 backdrop-blur-xl border border-white/20" />
+
+              {/* Gradient Overlay */}
+              <div
+                className={`absolute inset-0 bg-gradient-to-br ${config.gradient} opacity-90`}
               />
+
+              {/* Animated Glow Effect */}
+              <div
+                className={`absolute -inset-1 bg-gradient-to-r ${config.gradient} opacity-20 blur-xl group-hover:opacity-40 transition-opacity duration-500`}
+              />
+
+              {/* Shine Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+              {/* Content */}
+              <div className="relative z-10 p-6 text-center text-white">
+                {/* Icon with Advanced Glow */}
+                <div className="relative mb-4 flex justify-center">
+                  <div className="relative">
+                    {/* Multiple Glow Layers */}
+                    <div
+                      className={`absolute inset-0 ${config.iconGlow} blur-2xl opacity-60 group-hover:opacity-100 transition-opacity duration-500`}
+                    />
+                    <div
+                      className={`absolute inset-0 ${config.iconGlow} blur-xl opacity-40 group-hover:opacity-80 transition-opacity duration-500`}
+                    />
+                    <div
+                      className={`absolute inset-0 ${config.iconGlow} blur-lg opacity-20 group-hover:opacity-60 transition-opacity duration-500`}
+                    />
+
+                    {/* Icon Container with Glow */}
+                    <div className="relative p-3 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 group-hover:bg-white/20 transition-all duration-500">
+                      <IconComponent
+                        className="w-8 h-8 text-white drop-shadow-2xl group-hover:scale-110 transition-transform duration-300"
+                        strokeWidth={1.5}
+                      />
+                    </div>
+
+                    {/* Pulsing Ring */}
+                    <div
+                      className={`absolute inset-0 rounded-2xl border-2 border-white/30 opacity-0 group-hover:opacity-100 animate-pulse transition-opacity duration-500`}
+                    />
+                  </div>
+
+                  {/* Accent Line */}
+                  <div
+                    className={`absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-12 h-1 ${config.accent} rounded-full blur-sm opacity-60 group-hover:opacity-100 group-hover:w-16 transition-all duration-500`}
+                  />
+                </div>
+
+                {/* Title */}
+                <h3 className="font-bold text-sm leading-tight mb-3 drop-shadow-sm">
+                  {category.name}
+                </h3>
+
+                {/* Count Badge */}
+                <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-xs font-medium">
+                  <div
+                    className={`w-2 h-2 ${config.accent} rounded-full mr-2 animate-pulse`}
+                  />
+                  {category._count?.posts || 0} artigos
+                </div>
+
+                {/* Floating Particles */}
+                <div className="absolute top-4 right-4 w-2 h-2 bg-white/30 rounded-full animate-ping" />
+                <div className="absolute bottom-4 left-4 w-1 h-1 bg-white/40 rounded-full animate-pulse delay-300" />
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Filtros e Busca Ultra-Modernos 2025 */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="relative"
+      >
+        {/* Background com Glassmorphism */}
+        <div className="absolute inset-0 bg-gradient-to-r from-white/60 via-blue-50/40 to-emerald-50/60 backdrop-blur-2xl rounded-3xl border border-white/30 shadow-2xl shadow-blue-500/10" />
+
+        {/* Animated Border Glow */}
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 via-emerald-500/20 to-violet-500/20 rounded-3xl blur-sm opacity-60 animate-pulse" />
+
+        <Card className="relative p-8 bg-transparent border-0 shadow-none">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Busca Avançada */}
+            <div className="md:col-span-2">
+              <div className="relative group">
+                {/* Icon com Glow */}
+                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10">
+                  <Search className="w-5 h-5 text-blue-500 group-focus-within:text-emerald-500 transition-colors duration-300" />
+                  <div className="absolute inset-0 bg-blue-500 blur-md opacity-20 group-focus-within:opacity-40 transition-opacity duration-300" />
+                </div>
+
+                {/* Input com Glassmorphism */}
+                <Input
+                  placeholder="Buscar artigos..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-12 pr-4 py-3 bg-white/70 backdrop-blur-xl border-2 border-white/30 focus:border-emerald-400/50 focus:bg-white/80 rounded-2xl shadow-lg shadow-blue-500/5 focus:shadow-emerald-500/20 transition-all duration-300 placeholder:text-gray-400 text-gray-700"
+                />
+
+                {/* Shine Effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 -translate-x-full group-focus-within:translate-x-full transition-transform duration-1000 rounded-2xl" />
+              </div>
+            </div>
+
+            {/* Categoria com Efeitos */}
+            <div className="relative group">
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="bg-white/70 backdrop-blur-xl border-2 border-white/30 focus:border-blue-400/50 rounded-2xl shadow-lg shadow-blue-500/5 hover:shadow-blue-500/20 transition-all duration-300 h-12">
+                  <div className="flex items-center">
+                    <Filter className="w-4 h-4 mr-2 text-blue-500" />
+                    <SelectValue placeholder="Categoria" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent className="bg-white/95 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl">
+                  <SelectItem value="all" className="rounded-xl">
+                    Todas as categorias
+                  </SelectItem>
+                  {categories.map((category) => {
+                    const config = getCategoryConfig(category.slug);
+                    const IconComponent = config.icon;
+                    return (
+                      <SelectItem
+                        key={category.id}
+                        value={category.name}
+                        className="rounded-xl flex items-center"
+                      >
+                        <IconComponent className="w-4 h-4 mr-2" />
+                        {category.name}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Ordenação com Efeitos */}
+            <div className="relative group">
+              <Select
+                value={sortBy}
+                onValueChange={(value) =>
+                  setSortBy(value as "recent" | "popular" | "trending")
+                }
+              >
+                <SelectTrigger className="bg-white/70 backdrop-blur-xl border-2 border-white/30 focus:border-violet-400/50 rounded-2xl shadow-lg shadow-violet-500/5 hover:shadow-violet-500/20 transition-all duration-300 h-12">
+                  <SelectValue placeholder="Ordenar por" />
+                </SelectTrigger>
+                <SelectContent className="bg-white/95 backdrop-blur-xl border border-white/30 rounded-2xl shadow-2xl">
+                  <SelectItem
+                    value="recent"
+                    className="rounded-xl flex items-center"
+                  >
+                    <Clock className="w-4 h-4 mr-2 text-blue-500" /> Mais
+                    recentes
+                  </SelectItem>
+                  <SelectItem
+                    value="popular"
+                    className="rounded-xl flex items-center"
+                  >
+                    <Flame className="w-4 h-4 mr-2 text-orange-500" /> Mais
+                    populares
+                  </SelectItem>
+                  <SelectItem
+                    value="trending"
+                    className="rounded-xl flex items-center"
+                  >
+                    <TrendingUp className="w-4 h-4 mr-2 text-green-500" /> Em
+                    alta
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Categoria */}
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger>
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {BLOG_CATEGORIES.map((cat: any) => (
-                <SelectItem key={cat.id} value={cat.name}>
-                  {cat.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Ordenação */}
-          <Select
-            value={sortBy}
-            onValueChange={(value) =>
-              setSortBy(value as "recent" | "popular" | "trending")
-            }
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Ordenar por" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="recent">Mais recentes</SelectItem>
-              <SelectItem value="popular">Mais populares</SelectItem>
-              <SelectItem value="trending">Em alta</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </Card>
-
-      {/* Estatísticas */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">
-            {filteredAndSortedPosts.length}
-          </div>
-          <p className="text-sm text-gray-600">Artigos disponíveis</p>
+          {/* Decorative Elements */}
+          <div className="absolute top-4 right-4 w-2 h-2 bg-blue-400/30 rounded-full animate-ping" />
+          <div className="absolute bottom-4 left-4 w-1 h-1 bg-emerald-400/40 rounded-full animate-pulse delay-500" />
         </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">
-            {BLOG_CATEGORIES.length}
-          </div>
-          <p className="text-sm text-gray-600">Categorias</p>
-        </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">
-            {filteredAndSortedPosts.reduce(
-              (sum, post) => sum + post.comments.length,
+      </motion.div>
+
+      {/* Estatísticas Ultra-Modernas 2025 */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-6"
+      >
+        {[
+          {
+            value: filteredAndSortedPosts.length,
+            label: "Artigos disponíveis",
+            icon: BookOpen,
+            gradient: "from-blue-500 to-indigo-600",
+            glowColor: "shadow-blue-500/25",
+            accentColor: "bg-blue-400",
+            iconGlow: "shadow-blue-400/50",
+          },
+          {
+            value: categories.length,
+            label: "Categorias",
+            icon: Tags,
+            gradient: "from-emerald-500 to-teal-600",
+            glowColor: "shadow-emerald-500/25",
+            accentColor: "bg-emerald-400",
+            iconGlow: "shadow-emerald-400/50",
+          },
+          {
+            value: filteredAndSortedPosts.reduce(
+              (sum, post) => sum + (post.commentsCount || 0),
               0
-            )}
-          </div>
-          <p className="text-sm text-gray-600">Comentários</p>
-        </Card>
-        <Card className="p-4 text-center">
-          <div className="text-2xl font-bold text-gray-900">
-            {filteredAndSortedPosts
+            ),
+            label: "Comentários",
+            icon: MessageSquare,
+            gradient: "from-violet-500 to-purple-600",
+            glowColor: "shadow-violet-500/25",
+            accentColor: "bg-violet-400",
+            iconGlow: "shadow-violet-400/50",
+          },
+          {
+            value: filteredAndSortedPosts
               .reduce((sum, post) => sum + (post.views || 0), 0)
-              .toLocaleString("pt-BR")}
-          </div>
-          <p className="text-sm text-gray-600">Visualizações totais</p>
-        </Card>
-      </div>
+              .toLocaleString("pt-BR"),
+            label: "Visualizações totais",
+            icon: Eye,
+            gradient: "from-orange-500 to-amber-600",
+            glowColor: "shadow-orange-500/25",
+            accentColor: "bg-orange-400",
+            iconGlow: "shadow-orange-400/50",
+          },
+        ].map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{
+              delay: 0.6 + index * 0.1,
+              type: "spring",
+              stiffness: 100,
+              damping: 15,
+            }}
+            whileHover={{
+              scale: 1.05,
+              y: -5,
+              transition: { type: "spring", stiffness: 300, damping: 20 },
+            }}
+            className={`group relative overflow-hidden rounded-3xl ${stat.glowColor} hover:shadow-2xl transition-all duration-500`}
+          >
+            {/* Glassmorphism Background */}
+            <div className="absolute inset-0 bg-white/20 backdrop-blur-xl border border-white/30" />
 
-      {/* Lista de Posts */}
+            {/* Gradient Overlay */}
+            <div
+              className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-10 group-hover:opacity-20 transition-opacity duration-500`}
+            />
+
+            {/* Animated Glow */}
+            <div
+              className={`absolute -inset-1 bg-gradient-to-r ${stat.gradient} opacity-20 blur-xl group-hover:opacity-30 transition-opacity duration-500`}
+            />
+
+            {/* Shine Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+            {/* Content */}
+            <div className="relative z-10 p-6 text-center">
+              {/* Icon with Advanced Glow */}
+              <div className="relative mb-4 flex justify-center">
+                <div className="relative">
+                  {/* Multiple Glow Layers */}
+                  <div
+                    className={`absolute inset-0 ${stat.iconGlow} blur-2xl opacity-40 group-hover:opacity-80 transition-opacity duration-500`}
+                  />
+                  <div
+                    className={`absolute inset-0 ${stat.iconGlow} blur-xl opacity-30 group-hover:opacity-60 transition-opacity duration-500`}
+                  />
+                  <div
+                    className={`absolute inset-0 ${stat.iconGlow} blur-lg opacity-20 group-hover:opacity-40 transition-opacity duration-500`}
+                  />
+
+                  {/* Icon Container */}
+                  <div className="relative p-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 group-hover:bg-white/20 transition-all duration-500">
+                    <stat.icon
+                      className={`w-6 h-6 bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent drop-shadow-xl group-hover:scale-110 transition-transform duration-300`}
+                      strokeWidth={1.5}
+                      style={{
+                        filter: "drop-shadow(0 0 10px currentColor)",
+                        color: "white",
+                      }}
+                    />
+                  </div>
+
+                  {/* Pulsing Ring */}
+                  <div className="absolute inset-0 rounded-xl border border-white/20 opacity-0 group-hover:opacity-100 animate-pulse transition-opacity duration-500" />
+                </div>
+              </div>
+
+              {/* Value */}
+              <div
+                className={`text-3xl font-bold bg-gradient-to-r ${stat.gradient} bg-clip-text text-transparent mb-2 drop-shadow-sm`}
+              >
+                {stat.value}
+              </div>
+
+              {/* Label */}
+              <p className="text-sm font-medium text-gray-600 mb-2">
+                {stat.label}
+              </p>
+
+              {/* Progress Bar */}
+              <div className="w-full h-1 bg-gray-200/50 rounded-full overflow-hidden">
+                <motion.div
+                  className={`h-full ${stat.accentColor} rounded-full`}
+                  initial={{ width: 0 }}
+                  animate={{ width: "100%" }}
+                  transition={{
+                    delay: 0.8 + index * 0.1,
+                    duration: 1.5,
+                    ease: "easeOut",
+                  }}
+                />
+              </div>
+
+              {/* Floating Dot */}
+              <div
+                className={`absolute top-3 right-3 w-2 h-2 ${stat.accentColor} rounded-full animate-pulse opacity-60`}
+              />
+            </div>
+          </motion.div>
+        ))}
+      </motion.div>
+
+      {/* Lista de Posts Ultra-Moderna */}
       <AnimatePresence mode="wait">
         {loading ? (
-          <Card className="p-12 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
-              Carregando posts...
-            </h3>
-            <p className="text-gray-600">
-              Aguarde enquanto buscamos os artigos mais recentes
-            </p>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative overflow-hidden rounded-3xl"
+          >
+            {/* Glassmorphism Background */}
+            <div className="absolute inset-0 bg-white/30 backdrop-blur-2xl border border-white/40 shadow-2xl" />
+
+            {/* Animated Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 via-emerald-500/10 to-violet-500/10 animate-pulse" />
+
+            <div className="relative z-10 p-16 text-center">
+              {/* Modern Loading Spinner */}
+              <div className="relative mx-auto mb-8 w-16 h-16">
+                <div className="absolute inset-0 rounded-full border-4 border-transparent bg-gradient-to-r from-blue-500 to-emerald-500 animate-spin">
+                  <div className="absolute inset-1 rounded-full bg-white/90 backdrop-blur-sm" />
+                </div>
+                <div className="absolute inset-2 rounded-full bg-gradient-to-r from-blue-400 to-emerald-400 animate-pulse" />
+              </div>
+
+              {/* Loading Text */}
+              <motion.h3
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-emerald-600 bg-clip-text text-transparent mb-3"
+              >
+                Carregando posts...
+              </motion.h3>
+
+              <p className="text-gray-600 max-w-md mx-auto">
+                Aguarde enquanto buscamos os artigos mais recentes para você
+              </p>
+
+              {/* Loading Dots */}
+              <div className="flex justify-center items-center gap-2 mt-6">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    className="w-2 h-2 bg-gradient-to-r from-blue-400 to-emerald-400 rounded-full"
+                    animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      delay: i * 0.2,
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
         ) : error ? (
-          <Card className="p-12 text-center">
-            <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
-              Erro ao carregar posts
-            </h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <Button
-              onClick={() => {
-                console.log("🔄 Testando busca manual...");
-                const loadPosts = async () => {
-                  try {
-                    setLoading(true);
-                    setError(null);
-                    const response = await fetch("/api/posts");
-                    const apiPosts = await response.json();
-                    console.log("📝 Posts recebidos:", apiPosts.length);
-                    setPosts(
-                      apiPosts.map((post: any) => ({
-                        id: post.id,
-                        title: post.title,
-                        description: post.excerpt || "",
-                        content: post.content,
-                        mainImage: post.mainImage || null,
-                        authorName: post.author?.name || "Autor desconhecido",
-                        authorAvatar: post.author?.avatar || null,
-                        category: post.tags?.[0]?.tag?.name || "Geral",
-                        publishDate: post.publishedAt || post.createdAt,
-                        readingTime: post.readingTime || 5,
-                        views: post._count?.PostView || 0,
-                        commentsCount: post._count?.comments || 0,
-                        trending: false,
-                        comments: [],
-                      }))
-                    );
-                  } catch (err) {
-                    console.error("❌ Erro:", err);
-                    setError(
-                      err instanceof Error ? err.message : "Erro desconhecido"
-                    );
-                  } finally {
-                    setLoading(false);
-                  }
-                };
-                loadPosts();
-              }}
-              variant="outline"
-            >
-              Tentar novamente
-            </Button>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative overflow-hidden rounded-3xl"
+          >
+            {/* Glassmorphism Background */}
+            <div className="absolute inset-0 bg-white/30 backdrop-blur-2xl border border-white/40 shadow-2xl" />
+
+            {/* Error Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 via-orange-500/10 to-yellow-500/10" />
+
+            <div className="relative z-10 p-16 text-center">
+              {/* Error Icon with Glow */}
+              <div className="relative mx-auto mb-6 w-20 h-20">
+                <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-orange-400 rounded-full blur-xl opacity-30" />
+                <div className="relative bg-gradient-to-r from-red-500 to-orange-500 rounded-full p-4 shadow-xl">
+                  <AlertCircle className="w-12 h-12 text-white" />
+                </div>
+              </div>
+
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-3">
+                Erro ao carregar posts
+              </h3>
+
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">{error}</p>
+
+              <Button
+                onClick={() => {
+                  const loadPosts = async () => {
+                    try {
+                      setLoading(true);
+                      setError(null);
+                      const response = await fetch("/api/posts");
+                      const apiPosts = await response.json();
+                      setPosts(
+                        apiPosts.map((post: any) => ({
+                          id: post.id,
+                          title: post.title,
+                          slug: post.slug,
+                          description: post.excerpt || "",
+                          content: post.content,
+                          mainImage: post.mainImage || null,
+                          authorName: post.author?.name || "Autor desconhecido",
+                          authorAvatar: post.author?.avatar || null,
+                          category: post.tags?.[0]?.tag?.name || "Geral",
+                          publishDate: post.publishedAt || post.createdAt,
+                          readingTime: post.readingTime || 5,
+                          views: post._count?.PostView || 0,
+                          commentsCount: post._count?.comments || 0,
+                          trending: false,
+                          comments: [],
+                        }))
+                      );
+                    } catch (err) {
+                      setError(
+                        err instanceof Error ? err.message : "Erro desconhecido"
+                      );
+                    } finally {
+                      setLoading(false);
+                    }
+                  };
+                  loadPosts();
+                }}
+                className="bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white shadow-xl hover:shadow-2xl transition-all duration-300"
+              >
+                Tentar novamente
+              </Button>
+            </div>
+          </motion.div>
         ) : paginatedPosts.length > 0 ? (
           <motion.div
             key={currentPage}
@@ -376,8 +864,8 @@ export function BlogPostList() {
                 transition={{ delay: index * 0.1 }}
                 className="group cursor-pointer"
               >
-                <Card
-                  className="h-full hover:shadow-xl transition-all duration-300 overflow-hidden"
+                <div
+                  className="group relative h-full cursor-pointer overflow-hidden rounded-3xl transition-all duration-500 hover:scale-[1.03] hover:-translate-y-2"
                   onClick={async () => {
                     // Registrar visualização
                     try {
@@ -392,98 +880,137 @@ export function BlogPostList() {
                     router.push(`/blog/${post.slug}`);
                   }}
                 >
-                  {post.mainImage && (
-                    <div className="relative h-48 overflow-hidden">
-                      <img
-                        src={post.mainImage}
-                        alt={post.title}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute top-4 left-4 flex gap-2">
-                        <Badge className={getCategoryColor(post.category)}>
-                          {post.category}
-                        </Badge>
-                        {post.trending && (
-                          <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
-                            <TrendingUp className="w-3 h-3 mr-1" />
-                            Em alta
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  {/* Glassmorphism Background */}
+                  <div className="absolute inset-0 bg-white/40 backdrop-blur-2xl border border-white/30 shadow-2xl shadow-blue-500/10 group-hover:shadow-blue-500/20 transition-all duration-500" />
 
-                  <CardContent className="p-6">
-                    {!post.mainImage && (
-                      <div className="flex gap-2 mb-3">
-                        <Badge className={getCategoryColor(post.category)}>
-                          {post.category}
-                        </Badge>
-                        {post.trending && (
-                          <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
-                            <TrendingUp className="w-3 h-3 mr-1" />
-                            Em alta
+                  {/* Animated Glow */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-emerald-500/20 to-violet-500/20 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                  {/* Shine Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+
+                  <Card className="relative h-full bg-transparent border-0 shadow-none overflow-hidden">
+                    {post.mainImage && (
+                      <div className="relative h-48 overflow-hidden">
+                        <img
+                          src={post.mainImage}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                        <div className="absolute top-4 left-4 flex gap-2">
+                          <Badge className={getCategoryColor(post.category)}>
+                            {post.category}
                           </Badge>
-                        )}
+                          {post.trending && (
+                            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                              <TrendingUp className="w-3 h-3 mr-1" />
+                              Em alta
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     )}
 
-                    <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
-                      {post.title}
-                    </h3>
-
-                    <p className="text-gray-600 mb-4 line-clamp-3">
-                      {post.description}
-                    </p>
-
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={post.authorAvatar} />
-                          <AvatarFallback>{post.authorName[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {post.authorName}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {formatDate(post.publishDate)}
-                          </p>
+                    <CardContent className="p-6">
+                      {!post.mainImage && (
+                        <div className="flex gap-2 mb-3">
+                          <Badge className={getCategoryColor(post.category)}>
+                            {post.category}
+                          </Badge>
+                          {post.trending && (
+                            <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                              <TrendingUp className="w-3 h-3 mr-1" />
+                              Em alta
+                            </Badge>
+                          )}
                         </div>
-                      </div>
+                      )}
 
-                      <div className="flex items-center gap-3 text-sm text-gray-500">
-                        {post.readingTime && (
-                          <div className="flex items-center gap-1">
-                            <ClockIcon className="w-4 h-4" />
-                            <span>{post.readingTime}m</span>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                        {post.title}
+                      </h3>
+
+                      <p className="text-gray-600 mb-4 line-clamp-3">
+                        {post.description}
+                      </p>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage src={post.authorAvatar} />
+                            <AvatarFallback>
+                              {post.authorName[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">
+                              {post.authorName}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatDate(post.publishDate)}
+                            </p>
                           </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <MessageCircleIcon className="w-4 h-4" />
-                          <span>{post.commentsCount || 0}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" />
-                          <span>{post.views || 0}</span>
+
+                        <div className="flex items-center gap-3 text-sm text-gray-500">
+                          {post.readingTime && (
+                            <div className="flex items-center gap-1">
+                              <ClockIcon className="w-4 h-4" />
+                              <span>{post.readingTime}m</span>
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <MessageCircleIcon className="w-4 h-4" />
+                            <span>{post.commentsCount || 0}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Eye className="w-4 h-4" />
+                            <span>{post.views || 0}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                </div>
               </motion.article>
             ))}
           </motion.div>
         ) : (
-          <Card className="p-12 text-center">
-            <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-xl font-medium text-gray-900 mb-2">
-              Nenhum artigo encontrado
-            </h3>
-            <p className="text-gray-600">
-              Tente ajustar os filtros ou fazer uma nova busca
-            </p>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative overflow-hidden rounded-3xl"
+          >
+            {/* Glassmorphism Background */}
+            <div className="absolute inset-0 bg-white/30 backdrop-blur-2xl border border-white/40 shadow-2xl" />
+
+            {/* Empty State Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-500/5 via-blue-500/5 to-emerald-500/5" />
+
+            <div className="relative z-10 p-16 text-center">
+              {/* Empty State Icon with Glow */}
+              <div className="relative mx-auto mb-6 w-20 h-20">
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-300 to-blue-300 rounded-full blur-xl opacity-30" />
+                <div className="relative bg-gradient-to-r from-gray-400 to-blue-400 rounded-full p-4 shadow-xl">
+                  <BookOpen className="w-12 h-12 text-white" />
+                </div>
+              </div>
+
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-gray-600 to-blue-600 bg-clip-text text-transparent mb-3">
+                Nenhum artigo encontrado
+              </h3>
+
+              <p className="text-gray-600 max-w-md mx-auto">
+                Tente ajustar os filtros ou fazer uma nova busca para encontrar
+                o conteúdo que procura
+              </p>
+
+              {/* Floating Particles */}
+              <div className="absolute top-8 right-8 w-2 h-2 bg-blue-300/40 rounded-full animate-ping" />
+              <div className="absolute bottom-8 left-8 w-1 h-1 bg-gray-300/40 rounded-full animate-pulse delay-300" />
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
@@ -552,7 +1079,7 @@ export function BlogPostList() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             onClick={scrollToTop}
-            className="fixed bottom-8 right-8 p-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 transition-colors z-50"
+            className="fixed bottom-8 right-8 p-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 z-50 hover:scale-110"
           >
             <ArrowUp className="w-6 h-6" />
           </motion.button>

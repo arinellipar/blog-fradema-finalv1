@@ -55,7 +55,7 @@ import { ROUTES } from "@/lib/utils";
  */
 const AUTH_CONFIG = {
   TOKEN_REFRESH_INTERVAL: 45 * 60 * 1000, // 45 minutes
-  SESSION_CHECK_INTERVAL: 5 * 60 * 1000, // 5 minutes
+  SESSION_CHECK_INTERVAL: 15 * 60 * 1000, // 15 minutes (increased to reduce frequency)
   MAX_RETRY_ATTEMPTS: 3,
   RETRY_DELAY_BASE: 1000, // 1 second base delay
   DEBOUNCE_DELAY: 300, // 300ms debounce
@@ -348,8 +348,15 @@ class AuthRequestManager {
   ): AuthError {
     // Check for structured error response
     if (data?.error) {
+      // Mapear string de código para enum se necessário
+      const errorCode =
+        data.error.code &&
+        Object.values(AuthErrorCode).includes(data.error.code)
+          ? (data.error.code as AuthErrorCode)
+          : AuthErrorCode.UNKNOWN_ERROR;
+
       return AuthErrorFactory.create(
-        data.error.code || AuthErrorCode.UNKNOWN_ERROR,
+        errorCode,
         data.error.message || `HTTP ${status} error`,
         data.error.field,
         data.error.details
@@ -679,7 +686,23 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
         console.log(`[AUTH:${correlationId}] Login successful`);
       } catch (error) {
         const authError = error as AuthError;
-        console.error(`[AUTH:${correlationId}] Login failed:`, authError);
+
+        // Apenas logar erros inesperados, não erros de autenticação normais
+        const expectedErrors = [
+          AuthErrorCode.USER_NOT_FOUND,
+          AuthErrorCode.INVALID_PASSWORD,
+          AuthErrorCode.INVALID_CREDENTIALS,
+          AuthErrorCode.EMAIL_NOT_VERIFIED,
+          AuthErrorCode.ACCOUNT_DISABLED,
+        ];
+
+        if (!expectedErrors.includes(authError.code)) {
+          console.error(`[AUTH:${correlationId}] Login failed:`, authError);
+        } else {
+          console.log(
+            `[AUTH:${correlationId}] Login failed: ${authError.code} - ${authError.message}`
+          );
+        }
 
         safeDispatch({
           type: "AUTH_LOGIN_FAILURE",
@@ -983,6 +1006,7 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
   React.useEffect(() => {
     if (state.isAuthenticated) {
       sessionCheckIntervalRef.current = setInterval(() => {
+        // Use a stable reference to avoid dependency issues
         initializeAuth();
       }, AUTH_CONFIG.SESSION_CHECK_INTERVAL);
 
@@ -992,10 +1016,10 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
         }
       };
     }
-  }, [state.isAuthenticated, initializeAuth]);
+  }, [state.isAuthenticated]); // Remove initializeAuth dependency
 
   /**
-   * Initialize authentication on mount
+   * Initialize authentication on mount (only once)
    */
   React.useEffect(() => {
     initializeAuth();
@@ -1012,7 +1036,7 @@ export function AuthProvider({ children }: React.PropsWithChildren) {
         clearInterval(sessionCheckIntervalRef.current);
       }
     };
-  }, [initializeAuth]);
+  }, []); // Remove initializeAuth dependency to prevent loops
 
   /**
    * Clear errors on route change

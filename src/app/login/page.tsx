@@ -214,6 +214,26 @@ export default function LoginPage() {
           });
           break;
 
+        case AuthErrorCode.USER_NOT_FOUND:
+          setFormState((prev) => ({
+            ...prev,
+            errors: { general: "Esse usuário não existe" },
+          }));
+          toast.error("Usuário não encontrado", {
+            description: "Esse usuário não existe",
+          });
+          break;
+
+        case AuthErrorCode.INVALID_PASSWORD:
+          setFormState((prev) => ({
+            ...prev,
+            errors: { general: "Login ou senha incorretos" },
+          }));
+          toast.error("Senha incorreta", {
+            description: "Login ou senha incorretos",
+          });
+          break;
+
         case AuthErrorCode.EMAIL_NOT_VERIFIED:
           setFormState((prev) => ({
             ...prev,

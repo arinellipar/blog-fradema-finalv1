@@ -21,6 +21,8 @@ import {
   Camera,
   AlertCircle,
   File,
+  Tag,
+  Folder,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -30,11 +32,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { formatDate, ROUTES } from "@/lib/utils";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// Interface para categoria
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
 
 // Schema de validação para criação de posts
 const BlogPostSchema = z.object({
@@ -52,6 +70,10 @@ const BlogPostSchema = z.object({
     .string()
     .min(50, "Conteúdo deve ter pelo menos 50 caracteres")
     .max(10000, "Conteúdo não pode exceder 10.000 caracteres"),
+
+  categories: z.array(z.string()).min(1, "Selecione pelo menos uma categoria"),
+
+  tags: z.array(z.string()).optional(),
 
   published: z.boolean().default(false).optional(),
 });
@@ -155,6 +177,12 @@ export default function NovoPostPage() {
   const [mainImagePreview, setMainImagePreview] = React.useState<string | null>(
     null
   );
+  const [categories, setCategories] = React.useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = React.useState<string[]>(
+    []
+  );
+  const [tags, setTags] = React.useState<string[]>([]);
+  const [tagInput, setTagInput] = React.useState("");
 
   const form = useForm<BlogPostFormData>({
     resolver: zodResolver(BlogPostSchema),
@@ -162,6 +190,8 @@ export default function NovoPostPage() {
       title: "",
       subtitle: "",
       content: "",
+      categories: [],
+      tags: [],
       published: false,
     },
   });
@@ -185,6 +215,32 @@ export default function NovoPostPage() {
 
   // Estados adicionais para drag & drop
   const [isDragging, setIsDragging] = React.useState(false);
+
+  // Carregar categorias disponíveis (apenas uma vez)
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories");
+        if (response.ok && isMounted) {
+          const categoriesData = await response.json();
+          setCategories(categoriesData);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Erro ao carregar categorias:", error);
+          toast.error("Erro ao carregar categorias");
+        }
+      }
+    };
+
+    fetchCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Remove toast dependency to prevent re-fetches
 
   // Handler para seleção de arquivos
   const handleFileSelect = async (
@@ -298,6 +354,49 @@ export default function NovoPostPage() {
     toast.success("Imagem principal definida!");
   };
 
+  // Handlers para categorias
+  const handleCategoryToggle = (categoryId: string) => {
+    setSelectedCategories((prev) => {
+      const isSelected = prev.includes(categoryId);
+      const newSelection = isSelected
+        ? prev.filter((id) => id !== categoryId)
+        : [...prev, categoryId];
+
+      // Atualizar o campo categories no formulário para validação
+      form.setValue("categories", newSelection, { shouldValidate: true });
+
+      return newSelection;
+    });
+  };
+
+  // Handlers para tags
+  const handleAddTag = (tagName: string) => {
+    const normalizedTag = tagName.trim();
+    if (normalizedTag && !tags.includes(normalizedTag)) {
+      const newTags = [...tags, normalizedTag];
+      setTags(newTags);
+      setTagInput("");
+
+      // Atualizar o campo tags no formulário
+      form.setValue("tags", newTags, { shouldValidate: true });
+    }
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    const newTags = tags.filter((tag) => tag !== tagToRemove);
+    setTags(newTags);
+
+    // Atualizar o campo tags no formulário
+    form.setValue("tags", newTags, { shouldValidate: true });
+  };
+
+  const handleTagInputKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      handleAddTag(tagInput);
+    }
+  };
+
   // Submissão do formulário
   const onSubmit = async (data: BlogPostFormData) => {
     if (!user) {
@@ -336,8 +435,8 @@ export default function NovoPostPage() {
           description: data.subtitle,
           published: data.published,
           mainImage: mainImagePreview,
-          category: "Geral", // Pode ser expandido para permitir seleção
-          tags: [], // Pode ser expandido para permitir tags
+          categories: selectedCategories,
+          tags: tags,
         }),
       });
 
@@ -428,10 +527,17 @@ export default function NovoPostPage() {
                 variant="outline"
                 onClick={() =>
                   handleSubmit((data) =>
-                    onSubmit({ ...data, published: false })
+                    onSubmit({
+                      ...data,
+                      categories: selectedCategories,
+                      tags: tags,
+                      published: false,
+                    })
                   )()
                 }
-                disabled={isSubmitting || !isValid}
+                disabled={
+                  isSubmitting || !isValid || selectedCategories.length === 0
+                }
                 className="flex items-center gap-2"
               >
                 <Save className="w-4 h-4" />
@@ -441,10 +547,17 @@ export default function NovoPostPage() {
               <Button
                 onClick={() =>
                   handleSubmit((data) =>
-                    onSubmit({ ...data, published: true })
+                    onSubmit({
+                      ...data,
+                      categories: selectedCategories,
+                      tags: tags,
+                      published: true,
+                    })
                   )()
                 }
-                disabled={isSubmitting || !isValid}
+                disabled={
+                  isSubmitting || !isValid || selectedCategories.length === 0
+                }
                 className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
               >
                 {isSubmitting ? (
@@ -670,6 +783,103 @@ export default function NovoPostPage() {
                 </CardContent>
               </Card>
 
+              {/* Categorias e Tags */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Folder className="w-5 h-5" />
+                    Categorias e Tags
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Categorias */}
+                  <div>
+                    <Label className="text-base font-medium mb-3 block">
+                      Categorias * (selecione pelo menos uma)
+                      <span className="text-xs text-gray-500 ml-2">
+                        ({categories.length} disponíveis)
+                      </span>
+                    </Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {categories.map((category) => (
+                        <div
+                          key={category.id}
+                          className="flex items-center space-x-2"
+                        >
+                          <Checkbox
+                            id={`category-${category.id}`}
+                            checked={selectedCategories.includes(category.id)}
+                            onCheckedChange={() =>
+                              handleCategoryToggle(category.id)
+                            }
+                          />
+                          <Label
+                            htmlFor={`category-${category.id}`}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {category.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedCategories.length === 0 && (
+                      <p className="mt-2 text-sm text-red-600">
+                        Selecione pelo menos uma categoria
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Tags */}
+                  <div>
+                    <Label className="text-base font-medium mb-3 block">
+                      Tags (opcional)
+                    </Label>
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Digite uma tag e pressione Enter"
+                          value={tagInput}
+                          onChange={(e) => setTagInput(e.target.value)}
+                          onKeyPress={handleTagInputKeyPress}
+                          className="flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => handleAddTag(tagInput)}
+                          disabled={!tagInput.trim()}
+                        >
+                          Adicionar
+                        </Button>
+                      </div>
+
+                      {/* Tags selecionadas */}
+                      {tags.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {tags.map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="secondary"
+                              className="flex items-center gap-1"
+                            >
+                              <Tag className="w-3 h-3" />
+                              {tag}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveTag(tag)}
+                                className="ml-1 hover:text-red-500"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
               {/* Conteúdo */}
               <Card>
                 <CardHeader>
@@ -764,6 +974,49 @@ export default function NovoPostPage() {
                     <span>•</span>
                     <span>{formatDate(new Date())}</span>
                   </div>
+                  {/* Categorias selecionadas */}
+                  {selectedCategories.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-600">
+                        Categorias:
+                      </p>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedCategories.map((categoryId) => {
+                          const category = categories.find(
+                            (c) => c.id === categoryId
+                          );
+                          return category ? (
+                            <Badge
+                              key={categoryId}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {category.name}
+                            </Badge>
+                          ) : null;
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tags selecionadas */}
+                  {tags.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-gray-600">Tags:</p>
+                      <div className="flex flex-wrap gap-1">
+                        {tags.map((tag) => (
+                          <Badge
+                            key={tag}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {attachedFiles.length > 0 && (
                     <div className="text-xs text-gray-500">
                       {attachedFiles.length} arquivo

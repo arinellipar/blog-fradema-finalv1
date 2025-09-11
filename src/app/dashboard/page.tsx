@@ -128,7 +128,7 @@ export default function RealTimeDashboard() {
     isStale,
   } = useDashboard({
     filters: { period: selectedPeriod },
-    autoRefresh: true,
+    autoRefresh: false, // Disabled temporarily to prevent refresh issues
     refreshInterval: 5 * 60 * 1000, // 5 minutos
   });
 

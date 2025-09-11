@@ -20,6 +20,11 @@ export async function GET(request: NextRequest) {
             avatar: true,
           },
         },
+        categories: {
+          include: {
+            category: true,
+          },
+        },
         tags: {
           include: {
             tag: true,
@@ -63,7 +68,7 @@ export async function POST(request: NextRequest) {
       content,
       description,
       mainImage,
-      category,
+      categories,
       tags,
       published = false,
     } = body;
@@ -105,6 +110,15 @@ export async function POST(request: NextRequest) {
         mainImage,
         published,
         authorId: authResult.user.id,
+        categories: categories?.length
+          ? {
+              create: categories.map((categoryId: string) => ({
+                category: {
+                  connect: { id: categoryId },
+                },
+              })),
+            }
+          : undefined,
         tags: tags?.length
           ? {
               create: tags.map((tagName: string) => ({
@@ -128,6 +142,11 @@ export async function POST(request: NextRequest) {
             name: true,
             email: true,
             avatar: true,
+          },
+        },
+        categories: {
+          include: {
+            category: true,
           },
         },
         tags: {

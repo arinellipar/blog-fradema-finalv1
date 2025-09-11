@@ -31,30 +31,13 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { CONFIG } from "@/lib/config";
 
-// Categorias padrão
-const DEFAULT_CATEGORIES = [
-  { id: "geral", name: "Geral", slug: "geral", color: "#6B7280" },
-  {
-    id: "tributario",
-    name: "Tributário",
-    slug: "tributario",
-    color: "#3B82F6",
-  },
-  { id: "fiscal", name: "Fiscal", slug: "fiscal", color: "#10B981" },
-  { id: "contabil", name: "Contábil", slug: "contabil", color: "#F59E0B" },
-  {
-    id: "legislacao",
-    name: "Legislação",
-    slug: "legislacao",
-    color: "#8B5CF6",
-  },
-  {
-    id: "planejamento",
-    name: "Planejamento",
-    slug: "planejamento",
-    color: "#EF4444",
-  },
-];
+// Interface para categoria
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+}
 
 // Tags sugeridas
 const SUGGESTED_TAGS = [
@@ -107,11 +90,38 @@ export function BlogPostForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [charCount, setCharCount] = useState({
     title: 0,
     description: 0,
     content: 0,
   });
+
+  // Carregar categorias disponíveis (apenas uma vez)
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch("/api/categories");
+        if (response.ok && isMounted) {
+          const categoriesData = await response.json();
+          setCategories(categoriesData);
+        }
+      } catch (error) {
+        if (isMounted) {
+          console.error("Erro ao carregar categorias:", error);
+          toast.error("Erro ao carregar categorias");
+        }
+      }
+    };
+
+    fetchCategories();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Remove toast dependency to prevent re-fetches
 
   // Inicializa com dados do usuário e data atual
   useEffect(() => {
@@ -211,7 +221,13 @@ export function BlogPostForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...formData,
+          title: formData.title,
+          content: formData.content,
+          description: formData.description,
+          mainImage: formData.mainImage,
+          categories: formData.category ? [formData.category] : [],
+          tags: formData.tags,
+          published: formData.published,
           authorId: user?.id,
         }),
       });
@@ -383,13 +399,10 @@ export function BlogPostForm() {
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
-                  {DEFAULT_CATEGORIES.map((category) => (
-                    <SelectItem key={category.id} value={category.slug}>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: category.color }}
-                        />
+                        <div className="w-3 h-3 rounded-full bg-blue-500" />
                         {category.name}
                       </div>
                     </SelectItem>
