@@ -2,47 +2,88 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authGuard as getAuthGuard } from "@/lib/auth";
 
-// GET /api/posts - Listar posts
+// Cache simples em memória
+let postsCache: any = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+// GET /api/posts - Listar posts (com cache)
 export async function GET(request: NextRequest) {
   try {
-    console.log("🔍 Buscando posts publicados...");
+    // Verificar se o cache ainda é válido
+    const now = Date.now();
+    if (postsCache && now - cacheTimestamp < CACHE_DURATION) {
+      console.log("📦 Retornando posts do cache");
+      return NextResponse.json(postsCache);
+    }
+
+    console.log("🔍 Buscando posts publicados do banco...");
 
     const posts = await prisma.post.findMany({
       where: {
         published: true,
       },
-      include: {
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        content: true,
+        mainImage: true,
+        publishedAt: true,
+        createdAt: true,
+        readingTime: true,
         author: {
           select: {
             id: true,
             name: true,
-            email: true,
             avatar: true,
           },
         },
         categories: {
-          include: {
-            category: true,
+          select: {
+            category: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
           },
         },
         tags: {
-          include: {
-            tag: true,
+          select: {
+            tag: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+              },
+            },
           },
         },
         _count: {
           select: {
             PostView: true,
-            comments: true,
+            comments: {
+              where: {
+                approved: true,
+              },
+            },
           },
         },
       },
       orderBy: {
-        createdAt: "desc",
+        publishedAt: "desc",
       },
+      take: 50, // Limitar para os 50 posts mais recentes
     });
 
-    console.log(`✅ Encontrados ${posts.length} posts publicados`);
+    // Atualizar cache
+    postsCache = posts;
+    cacheTimestamp = now;
+
+    console.log(`✅ Encontrados ${posts.length} posts publicados (cached)`);
     return NextResponse.json(posts);
   } catch (error) {
     console.error("❌ Error fetching posts:", error);

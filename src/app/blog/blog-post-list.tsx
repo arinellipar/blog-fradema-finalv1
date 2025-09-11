@@ -73,78 +73,78 @@ interface Comment {
 
 const POSTS_PER_PAGE = 6;
 
-// Mapeamento de ícones e cores para categorias
-const getCategoryConfig = (slug: string) => {
-  const configs: Record<string, any> = {
-    tributario: {
-      icon: Building2,
-      gradient: "from-blue-500 via-blue-600 to-indigo-700",
-      glowColor: "shadow-blue-500/25",
-      hoverGlow: "hover:shadow-blue-500/40",
-      accent: "bg-blue-400",
-      iconGlow: "shadow-blue-400/50",
-    },
-    fiscal: {
-      icon: Calculator,
-      gradient: "from-emerald-500 via-green-600 to-teal-700",
-      glowColor: "shadow-emerald-500/25",
-      hoverGlow: "hover:shadow-emerald-500/40",
-      accent: "bg-emerald-400",
-      iconGlow: "shadow-emerald-400/50",
-    },
-    contabil: {
-      icon: BarChart3,
-      gradient: "from-orange-500 via-amber-600 to-yellow-600",
-      glowColor: "shadow-orange-500/25",
-      hoverGlow: "hover:shadow-orange-500/40",
-      accent: "bg-orange-400",
-      iconGlow: "shadow-orange-400/50",
-    },
-    legislacao: {
-      icon: Scale,
-      gradient: "from-violet-500 via-purple-600 to-indigo-700",
-      glowColor: "shadow-violet-500/25",
-      hoverGlow: "hover:shadow-violet-500/40",
-      accent: "bg-violet-400",
-      iconGlow: "shadow-violet-400/50",
-    },
-    "reforma-tributaria": {
-      icon: Building2,
-      gradient: "from-blue-600 via-blue-700 to-indigo-800",
-      glowColor: "shadow-blue-600/25",
-      hoverGlow: "hover:shadow-blue-600/40",
-      accent: "bg-blue-500",
-      iconGlow: "shadow-blue-500/50",
-    },
-    "imposto-renda": {
-      icon: Calculator,
-      gradient: "from-green-600 via-emerald-700 to-teal-800",
-      glowColor: "shadow-green-600/25",
-      hoverGlow: "hover:shadow-green-600/40",
-      accent: "bg-green-500",
-      iconGlow: "shadow-green-500/50",
-    },
-    "francisco-arrighi": {
-      icon: User,
-      gradient: "from-purple-600 via-violet-700 to-indigo-800",
-      glowColor: "shadow-purple-600/25",
-      hoverGlow: "hover:shadow-purple-600/40",
-      accent: "bg-purple-500",
-      iconGlow: "shadow-purple-500/50",
-    },
-    "atualizacoes-tributarias": {
-      icon: BarChart3,
-      gradient: "from-orange-600 via-red-600 to-pink-700",
-      glowColor: "shadow-orange-600/25",
-      hoverGlow: "hover:shadow-orange-600/40",
-      accent: "bg-orange-500",
-      iconGlow: "shadow-orange-500/50",
-    },
-  };
+// Mapeamento de ícones e cores para categorias (constante)
+const CATEGORY_CONFIGS: Record<string, any> = {
+  tributario: {
+    icon: Building2,
+    gradient: "from-blue-500 via-blue-600 to-indigo-700",
+    glowColor: "shadow-blue-500/25",
+    hoverGlow: "hover:shadow-blue-500/40",
+    accent: "bg-blue-400",
+    iconGlow: "shadow-blue-400/50",
+  },
+  fiscal: {
+    icon: Calculator,
+    gradient: "from-emerald-500 via-green-600 to-teal-700",
+    glowColor: "shadow-emerald-500/25",
+    hoverGlow: "hover:shadow-emerald-500/40",
+    accent: "bg-emerald-400",
+    iconGlow: "shadow-emerald-400/50",
+  },
+  contabil: {
+    icon: BarChart3,
+    gradient: "from-orange-500 via-amber-600 to-yellow-600",
+    glowColor: "shadow-orange-500/25",
+    hoverGlow: "hover:shadow-orange-500/40",
+    accent: "bg-orange-400",
+    iconGlow: "shadow-orange-400/50",
+  },
+  legislacao: {
+    icon: Scale,
+    gradient: "from-violet-500 via-purple-600 to-indigo-700",
+    glowColor: "shadow-violet-500/25",
+    hoverGlow: "hover:shadow-violet-500/40",
+    accent: "bg-violet-400",
+    iconGlow: "shadow-violet-400/50",
+  },
+  "reforma-tributaria": {
+    icon: Building2,
+    gradient: "from-blue-600 via-blue-700 to-indigo-800",
+    glowColor: "shadow-blue-600/25",
+    hoverGlow: "hover:shadow-blue-600/40",
+    accent: "bg-blue-500",
+    iconGlow: "shadow-blue-500/50",
+  },
+  "imposto-renda": {
+    icon: Calculator,
+    gradient: "from-green-600 via-emerald-700 to-teal-800",
+    glowColor: "shadow-green-600/25",
+    hoverGlow: "hover:shadow-green-600/40",
+    accent: "bg-green-500",
+    iconGlow: "shadow-green-500/50",
+  },
+  "francisco-arrighi": {
+    icon: User,
+    gradient: "from-purple-600 via-violet-700 to-indigo-800",
+    glowColor: "shadow-purple-600/25",
+    hoverGlow: "hover:shadow-purple-600/40",
+    accent: "bg-purple-500",
+    iconGlow: "shadow-purple-500/50",
+  },
+  "atualizacoes-tributarias": {
+    icon: BarChart3,
+    gradient: "from-orange-600 via-red-600 to-pink-700",
+    glowColor: "shadow-orange-600/25",
+    hoverGlow: "hover:shadow-orange-600/40",
+    accent: "bg-orange-500",
+    iconGlow: "shadow-orange-500/50",
+  },
+};
 
-  // Configuração padrão para categorias não mapeadas
+// Função para obter configuração de categoria
+const getCategoryConfig = (slug: string) => {
   return (
-    configs[slug] || {
+    CATEGORY_CONFIGS[slug] || {
       icon: Tags,
       gradient: "from-gray-500 via-gray-600 to-gray-700",
       glowColor: "shadow-gray-500/25",
@@ -174,9 +174,38 @@ export function BlogPostList() {
   const [categories, setCategories] = React.useState<any[]>([]);
   const [categoriesLoading, setCategoriesLoading] = React.useState(false);
 
+  // Função para converter posts da API (memoizada)
+  const convertApiPosts = React.useCallback((apiPosts: any[]): BlogPost[] => {
+    return apiPosts.map((post: any) => {
+      // Extrair todas as categorias do post
+      const allCategories =
+        post.categories
+          ?.map((cat: any) => cat.category?.name)
+          .filter(Boolean) || [];
+
+      return {
+        id: post.id,
+        title: post.title,
+        slug: post.slug,
+        description: post.excerpt || "",
+        content: post.content,
+        mainImage: post.mainImage || null,
+        authorName: post.author?.name || "Autor desconhecido",
+        authorAvatar: post.author?.avatar || null,
+        category: allCategories[0] || "Geral", // Primeira categoria para compatibilidade
+        categories: allCategories, // Array de todas as categorias
+        publishDate: post.publishedAt || post.createdAt,
+        readingTime: post.readingTime || 5,
+        views: post._count?.PostView || 0,
+        commentsCount: post._count?.comments || 0,
+        trending: false,
+        comments: [], // Array vazio para compatibilidade, mas a contagem está em commentsCount
+      };
+    });
+  }, []);
+
   // Buscar posts da API quando componente montar
   React.useEffect(() => {
-    console.log("🔄 useEffect executado");
     const loadPosts = async () => {
       try {
         setLoading(true);
@@ -189,35 +218,7 @@ export function BlogPostList() {
         }
 
         const apiPosts = await response.json();
-
-        // Converter posts da API para o formato esperado pelo componente
-        const convertedPosts: BlogPost[] = apiPosts.map((post: any) => {
-          // Extrair todas as categorias do post
-          const allCategories =
-            post.categories
-              ?.map((cat: any) => cat.category?.name)
-              .filter(Boolean) || [];
-
-          return {
-            id: post.id,
-            title: post.title,
-            slug: post.slug,
-            description: post.excerpt || "",
-            content: post.content,
-            mainImage: post.mainImage || null,
-            authorName: post.author?.name || "Autor desconhecido",
-            authorAvatar: post.author?.avatar || null,
-            category: allCategories[0] || "Geral", // Primeira categoria para compatibilidade
-            categories: allCategories, // Array de todas as categorias
-            publishDate: post.publishedAt || post.createdAt,
-            readingTime: post.readingTime || 5,
-            views: post._count?.PostView || 0,
-            commentsCount: post._count?.comments || 0,
-            trending: false,
-            comments: [], // Array vazio para compatibilidade, mas a contagem está em commentsCount
-          };
-        });
-
+        const convertedPosts = convertApiPosts(apiPosts);
         setPosts(convertedPosts);
       } catch (err) {
         console.error("❌ Erro ao buscar posts:", err);
@@ -228,28 +229,28 @@ export function BlogPostList() {
     };
 
     loadPosts();
-  }, []);
+  }, [convertApiPosts]);
 
-  // Buscar categorias da API
-  React.useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        setCategoriesLoading(true);
-        const response = await fetch("/api/categories");
-        if (!response.ok) {
-          throw new Error("Erro ao buscar categorias");
-        }
-        const apiCategories = await response.json();
-        setCategories(apiCategories);
-      } catch (error) {
-        console.error("Erro ao carregar categorias:", error);
-      } finally {
-        setCategoriesLoading(false);
+  // Buscar categorias da API (memoizado)
+  const loadCategories = React.useCallback(async () => {
+    try {
+      setCategoriesLoading(true);
+      const response = await fetch("/api/categories");
+      if (!response.ok) {
+        throw new Error("Erro ao buscar categorias");
       }
-    };
-
-    loadCategories();
+      const apiCategories = await response.json();
+      setCategories(apiCategories);
+    } catch (error) {
+      console.error("Erro ao carregar categorias:", error);
+    } finally {
+      setCategoriesLoading(false);
+    }
   }, []);
+
+  React.useEffect(() => {
+    loadCategories();
+  }, [loadCategories]);
 
   // Monitora scroll para botão "voltar ao topo"
   React.useEffect(() => {

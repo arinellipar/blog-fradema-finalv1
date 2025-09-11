@@ -3,14 +3,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// GET /api/categories - Buscar todas as categorias
+// Cache simples em memória para categorias
+let categoriesCache: any = null;
+let categoriesCacheTimestamp = 0;
+const CATEGORIES_CACHE_DURATION = 10 * 60 * 1000; // 10 minutos (categorias mudam menos)
+
+// GET /api/categories - Buscar todas as categorias (com cache)
 export async function GET(request: NextRequest) {
   try {
+    // Verificar se o cache ainda é válido
+    const now = Date.now();
+    if (
+      categoriesCache &&
+      now - categoriesCacheTimestamp < CATEGORIES_CACHE_DURATION
+    ) {
+      console.log("📦 Retornando categorias do cache");
+      return NextResponse.json(categoriesCache);
+    }
+
+    console.log("🔍 Buscando categorias do banco...");
+
     const categories = await prisma.category.findMany({
-      include: {
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        createdAt: true,
+        updatedAt: true,
         _count: {
           select: {
-            posts: true,
+            posts: {
+              where: {
+                published: true, // Contar apenas posts publicados
+              },
+            },
           },
         },
       },
@@ -49,6 +76,13 @@ export async function GET(request: NextRequest) {
       return a.name.localeCompare(b.name);
     });
 
+    // Atualizar cache
+    categoriesCache = sortedCategories;
+    categoriesCacheTimestamp = now;
+
+    console.log(
+      `✅ Encontradas ${sortedCategories.length} categorias (cached)`
+    );
     return NextResponse.json(sortedCategories);
   } catch (error) {
     console.error("Error fetching categories:", error);

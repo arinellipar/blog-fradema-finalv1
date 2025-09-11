@@ -10,6 +10,16 @@ const nextConfig: NextConfig = {
     clientSegmentCache: true,
     devtoolSegmentExplorer: true,
     globalNotFound: true,
+    // Otimizações de performance
+    optimizePackageImports: ["lucide-react", "framer-motion"],
+    turbo: {
+      rules: {
+        "*.svg": {
+          loaders: ["@svgr/webpack"],
+          as: "*.js",
+        },
+      },
+    },
   },
 
   // Configuração para ignorar erros de build em APIs
@@ -17,6 +27,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
 
+  // Otimizações de imagens
   images: {
     remotePatterns: [
       {
@@ -32,6 +43,40 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
     ],
+    // Otimizações de imagem
+    formats: ["image/webp", "image/avif"],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 dias
+    dangerouslyAllowSVG: true,
+    contentDispositionType: "attachment",
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+  },
+
+  // Compressão e otimizações
+  compress: true,
+
+  // Configurações de build
+  swcMinify: true,
+
+  // Otimizações de bundle
+  webpack: (config, { dev, isServer }) => {
+    // Otimizações apenas para produção
+    if (!dev && !isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: "all",
+          cacheGroups: {
+            vendor: {
+              test: /[\\/]node_modules[\\/]/,
+              name: "vendors",
+              chunks: "all",
+            },
+          },
+        },
+      };
+    }
+
+    return config;
   },
 
   // Configuração para upload de arquivos
