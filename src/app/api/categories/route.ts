@@ -33,11 +33,7 @@ export async function GET(request: NextRequest) {
         updatedAt: true,
         _count: {
           select: {
-            posts: {
-              where: {
-                published: true, // Contar apenas posts publicados
-              },
-            },
+            posts: true, // Contar todas as relações de posts
           },
         },
       },
