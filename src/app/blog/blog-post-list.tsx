@@ -39,6 +39,7 @@ import {
   Clock,
   Flame,
   Scale,
+  ShieldCheck,
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
@@ -132,12 +133,28 @@ const CATEGORY_CONFIGS: Record<string, any> = {
     iconGlow: "shadow-purple-500/50",
   },
   "atualizacoes-tributarias": {
-    icon: BarChart3,
+    icon: TrendingUp,
     gradient: "from-orange-600 via-red-600 to-pink-700",
     glowColor: "shadow-orange-600/25",
     hoverGlow: "hover:shadow-orange-600/40",
     accent: "bg-orange-500",
     iconGlow: "shadow-orange-500/50",
+  },
+  planejamento: {
+    icon: BarChart3,
+    gradient: "from-amber-500 via-orange-600 to-red-600",
+    glowColor: "shadow-amber-500/25",
+    hoverGlow: "hover:shadow-amber-500/40",
+    accent: "bg-amber-400",
+    iconGlow: "shadow-amber-400/50",
+  },
+  compliance: {
+    icon: ShieldCheck,
+    gradient: "from-cyan-500 via-blue-600 to-indigo-700",
+    glowColor: "shadow-cyan-500/25",
+    hoverGlow: "hover:shadow-cyan-500/40",
+    accent: "bg-cyan-400",
+    iconGlow: "shadow-cyan-400/50",
   },
 };
 

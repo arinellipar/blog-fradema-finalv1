@@ -23,6 +23,36 @@ async function main() {
 
   // Criar categorias
   const categories = await Promise.all([
+    // 4 categorias principais do blog
+    prisma.category.create({
+      data: {
+        name: "Francisco Arrighi",
+        slug: "francisco-arrighi",
+        description: "Artigos e insights do especialista Francisco Arrighi",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Atualizações Tributárias",
+        slug: "atualizacoes-tributarias",
+        description: "Últimas novidades e mudanças na legislação tributária",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Imposto de Renda",
+        slug: "imposto-renda",
+        description: "Guias e dicas sobre Imposto de Renda",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Reforma Tributária",
+        slug: "reforma-tributaria",
+        description: "Análises e impactos da Reforma Tributária",
+      },
+    }),
+    // Outras categorias importantes
     prisma.category.create({
       data: {
         name: "Tributário",
@@ -56,6 +86,13 @@ async function main() {
         name: "Planejamento Tributário",
         slug: "planejamento",
         description: "Estratégias de planejamento fiscal",
+      },
+    }),
+    prisma.category.create({
+      data: {
+        name: "Compliance",
+        slug: "compliance",
+        description: "Conformidade e boas práticas empresariais",
       },
     }),
   ]);

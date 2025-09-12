@@ -203,3 +203,4 @@ export function useCachedCategories() {
     { ttl: 10 * 60 * 1000 } // 10 minutos
   );
 }
+
