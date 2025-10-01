@@ -25,6 +25,10 @@ import {
   AlertTriangle,
   Target,
   Users,
+  Upload,
+  Image as ImageIcon,
+  X,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -88,6 +92,7 @@ interface Post {
   title: string;
   slug: string;
   excerpt?: string;
+  mainImage?: string;
   published: boolean;
   publishedAt?: Date;
   createdAt: Date;
@@ -147,6 +152,7 @@ interface EditPostData {
   title: string;
   excerpt: string;
   published: boolean;
+  mainImage?: string;
 }
 
 type DialogType = "edit" | "delete" | "view" | "analytics";
@@ -182,7 +188,10 @@ export function PostsManagement({
     title: "",
     excerpt: "",
     published: false,
+    mainImage: "",
   });
+  const [uploadingImage, setUploadingImage] = React.useState(false);
+  const [imagePreview, setImagePreview] = React.useState<string>("");
 
   // Carregar posts
   const loadPosts = React.useCallback(async () => {
@@ -263,10 +272,86 @@ export function PostsManagement({
         title: post.title,
         excerpt: post.excerpt || "",
         published: post.published,
+        mainImage: post.mainImage || "",
       });
+      setImagePreview(post.mainImage || "");
     }
 
     setDialogOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validar tipo de arquivo
+    if (!file.type.startsWith("image/")) {
+      toast({
+        title: "Arquivo inválido",
+        description: "Por favor, selecione uma imagem",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validar tamanho (máx 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Arquivo muito grande",
+        description: "A imagem deve ter no máximo 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        credentials: "include",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.url) {
+        setImagePreview(data.url);
+        setEditData((prev) => ({
+          ...prev,
+          mainImage: data.url,
+        }));
+
+        toast({
+          title: "Imagem carregada",
+          description: "A imagem foi carregada com sucesso",
+        });
+      } else {
+        throw new Error(data.error || "Erro ao fazer upload da imagem");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Erro no upload",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview("");
+    setEditData((prev) => ({
+      ...prev,
+      mainImage: "",
+    }));
+    toast({
+      title: "Imagem removida",
+      description: "A imagem foi removida do post",
+    });
   };
 
   const handleEditSubmit = async () => {
@@ -606,6 +691,7 @@ export function PostsManagement({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-12">Img</TableHead>
                     <TableHead>Post</TableHead>
                     <TableHead>Autor</TableHead>
                     <TableHead>Status</TableHead>
@@ -618,6 +704,21 @@ export function PostsManagement({
                 <TableBody>
                   {filteredPosts.map((post) => (
                     <TableRow key={post.id}>
+                      <TableCell>
+                        {post.mainImage ? (
+                          <div className="w-8 h-8 rounded overflow-hidden">
+                            <img
+                              src={post.mainImage}
+                              alt={post.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded bg-gray-100 flex items-center justify-center">
+                            <ImageIcon className="w-4 h-4 text-gray-400" />
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <div className="max-w-xs">
                           <div className="font-medium line-clamp-1">
@@ -863,6 +964,85 @@ export function PostsManagement({
                       placeholder="Descrição do post"
                       rows={3}
                     />
+                  </div>
+
+                  {/* Upload de Imagem */}
+                  <div className="space-y-2">
+                    <Label>Imagem Principal</Label>
+                    {imagePreview ? (
+                      <div className="relative">
+                        <div className="relative w-full h-48 rounded-lg overflow-hidden border-2 border-gray-200">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <label
+                              htmlFor="image-upload"
+                              className="cursor-pointer bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                            >
+                              <Upload className="w-4 h-4" />
+                              Substituir
+                            </label>
+                            <button
+                              onClick={handleRemoveImage}
+                              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Remover
+                            </button>
+                          </div>
+                        </div>
+                        <input
+                          id="image-upload"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          disabled={uploadingImage}
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <label
+                          htmlFor="image-upload"
+                          className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors"
+                        >
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            {uploadingImage ? (
+                              <>
+                                <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
+                                <p className="text-sm text-gray-600">
+                                  Enviando imagem...
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                                <p className="text-sm text-gray-600">
+                                  <span className="font-semibold">
+                                    Clique para adicionar
+                                  </span>{" "}
+                                  ou arraste uma imagem
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  PNG, JPG ou WEBP (máx. 5MB)
+                                </p>
+                              </>
+                            )}
+                          </div>
+                          <input
+                            id="image-upload"
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            disabled={uploadingImage}
+                          />
+                        </label>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center space-x-2">

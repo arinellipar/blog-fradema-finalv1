@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const body = await request.json();
-    const { title, published, excerpt } = body;
+    const { title, published, excerpt, mainImage } = body;
 
     // Verificar se o post existe
     const existingPost = await db.post.findUnique({
@@ -84,6 +84,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
       data: {
         ...(title && { title }),
         ...(excerpt && { excerpt }),
+        ...(typeof mainImage === "string" && { mainImage }),
         ...(typeof published === "boolean" && {
           published,
           publishedAt: published

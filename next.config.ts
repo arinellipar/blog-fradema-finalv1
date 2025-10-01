@@ -12,12 +12,14 @@ const nextConfig: NextConfig = {
     globalNotFound: true,
     // Otimizações de performance
     optimizePackageImports: ["lucide-react", "framer-motion"],
-    turbo: {
-      rules: {
-        "*.svg": {
-          loaders: ["@svgr/webpack"],
-          as: "*.js",
-        },
+  },
+
+  // Turbopack configuration (moved from experimental)
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
       },
     },
   },
@@ -54,8 +56,7 @@ const nextConfig: NextConfig = {
   // Compressão e otimizações
   compress: true,
 
-  // Configurações de build
-  swcMinify: true,
+  // Configurações de build (swcMinify is deprecated in Next.js 15)
 
   // Otimizações de bundle
   webpack: (config, { dev, isServer }) => {

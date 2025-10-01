@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
       title: post.title,
       slug: post.slug,
       excerpt: post.excerpt,
+      mainImage: post.mainImage,
       published: post.published,
       publishedAt: post.publishedAt,
       createdAt: post.createdAt,
