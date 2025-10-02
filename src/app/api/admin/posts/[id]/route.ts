@@ -65,110 +65,29 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const processContentForStorage = (content: string) => {
       if (!content) return "";
 
-      // Se já tem tags HTML estruturadas (não apenas <br>), retornar sem processar
+      // Se já tem tags HTML estruturadas, retornar sem processar
       if (
         content.includes("</p>") ||
         content.includes("<ul>") ||
-        content.includes("<ol>")
+        content.includes("<ol>") ||
+        content.includes("<div")
       ) {
         return content;
       }
 
-      // Apenas normalizar quebras de linha (Windows/Mac para Unix)
-      // Preservando TODOS os caracteres especiais do Word
+      // Normalizar quebras de linha (Windows/Mac para Unix)
       const normalizedContent = content
         .replace(/\r\n/g, "\n") // Windows
         .replace(/\r/g, "\n"); // Mac antigo
 
-      // Dividir por quebras de linha
-      const lines = normalizedContent.split("\n");
+      // Preservar linhas vazias convertendo-as em &nbsp; para não colapsar
+      const processedContent = normalizedContent
+        .split("\n")
+        .map((line) => line || "&nbsp;") // Linhas vazias viram &nbsp;
+        .join("\n");
 
-      // Processar linhas agrupando em blocos (parágrafos, listas, etc)
-      const blocks: string[] = [];
-      let currentParagraph: string[] = [];
-      let currentList: string[] = [];
-      let listType: "ul" | "ol" | null = null;
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const trimmedLine = line.trim();
-
-        // Detectar itens de lista (bullets ou números)
-        const isBulletItem =
-          /^[•●○■▪▫➢➣➤➥►▶◆◇✓✔✗✘⚬⚫⚪▸▹◈◉◊◘◙◦◯⦿⦾⦿⦾⦿⦾⦿⦾]\s+/.test(trimmedLine) ||
-          /^[-–—*+]\s+/.test(trimmedLine);
-        const isNumberItem = /^\d+[\.\)]\s+/.test(trimmedLine);
-
-        if (isBulletItem || isNumberItem) {
-          // Item de lista encontrado
-
-          // Se estava em parágrafo, finalizar
-          if (currentParagraph.length > 0) {
-            blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
-            currentParagraph = [];
-          }
-
-          // Determinar tipo de lista
-          const newListType = isNumberItem ? "ol" : "ul";
-
-          // Se mudou o tipo de lista, finalizar lista anterior
-          if (listType && listType !== newListType && currentList.length > 0) {
-            blocks.push(
-              `<${listType}>\n${currentList.join("\n")}\n</${listType}>`
-            );
-            currentList = [];
-          }
-
-          listType = newListType;
-
-          // Remover marcador e adicionar item
-          const itemText = trimmedLine
-            .replace(/^[•●○■▪▫➢➣➤➥►▶◆◇✓✔✗✘⚬⚫⚪▸▹◈◉◊◘◙◦◯⦿⦾⦿⦾⦿⦾⦿⦾\-–—*+]\s+/, "")
-            .replace(/^\d+[\.\)]\s+/, "");
-          currentList.push(`  <li>${itemText}</li>`);
-        } else if (trimmedLine === "") {
-          // Linha vazia
-
-          // Finalizar lista se houver
-          if (currentList.length > 0 && listType) {
-            blocks.push(
-              `<${listType}>\n${currentList.join("\n")}\n</${listType}>`
-            );
-            currentList = [];
-            listType = null;
-          }
-
-          // Finalizar parágrafo se houver
-          if (currentParagraph.length > 0) {
-            blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
-            currentParagraph = [];
-          }
-        } else {
-          // Linha normal
-
-          // Se estava em lista, finalizar
-          if (currentList.length > 0 && listType) {
-            blocks.push(
-              `<${listType}>\n${currentList.join("\n")}\n</${listType}>`
-            );
-            currentList = [];
-            listType = null;
-          }
-
-          // Adicionar ao parágrafo atual
-          currentParagraph.push(line);
-        }
-      }
-
-      // Finalizar blocos pendentes
-      if (currentList.length > 0 && listType) {
-        blocks.push(`<${listType}>\n${currentList.join("\n")}\n</${listType}>`);
-      }
-      if (currentParagraph.length > 0) {
-        blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
-      }
-
-      return blocks.join("\n\n");
+      // Envolver em div com white-space: pre-line para preservar quebras de linha
+      return `<div style="white-space: pre-line; line-height: 1.75;">${processedContent}</div>`;
     };
 
     // Verificar se o post existe

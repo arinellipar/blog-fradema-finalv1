@@ -898,8 +898,12 @@ export default function NovoPostPage() {
                     {...register("content")}
                     placeholder="Escreva o conteúdo do seu artigo aqui..."
                     rows={20}
-                    className="resize-y min-h-[400px] font-mono"
-                    style={{ whiteSpace: "pre-wrap" }}
+                    className="resize-y min-h-[400px]"
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      fontFamily: "inherit",
+                      lineHeight: "1.75",
+                    }}
                   />
                   {errors.content && (
                     <p className="mt-2 text-sm text-red-600">

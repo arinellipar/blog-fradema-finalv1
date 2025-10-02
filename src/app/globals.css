@@ -206,3 +206,30 @@
   background: linear-gradient(to right, #f0f0f0 4%, #e0e0e0 25%, #f0f0f0 36%);
   background-size: 1000px 100%;
 }
+
+/* Espaçamento vertical APENAS para conteúdo de blog publicado */
+.blog-content-spacing p {
+  margin-bottom: 1.5rem !important;
+}
+
+.blog-content-spacing ul,
+.blog-content-spacing ol {
+  margin-top: 1.5rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.blog-content-spacing li {
+  margin-bottom: 0.25rem !important;
+  line-height: 1.75 !important;
+}
+
+/* Espaçamento entre parágrafos e listas */
+.blog-content-spacing p + ul,
+.blog-content-spacing p + ol {
+  margin-top: 1rem !important;
+}
+
+.blog-content-spacing ul + p,
+.blog-content-spacing ol + p {
+  margin-top: 1.5rem !important;
+}

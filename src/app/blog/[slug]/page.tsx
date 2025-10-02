@@ -545,27 +545,12 @@ export default function BlogPostPage() {
         {/* Content Card with Light Background */}
         <div className="bg-white rounded-3xl border border-blue-200/20 p-8 md:p-12 shadow-2xl shadow-blue-500/10">
           <div
-            className="prose prose-lg max-w-none
-            prose-headings:text-slate-900 prose-headings:font-bold
-            prose-h1:text-4xl prose-h1:mb-6
-            prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:text-blue-900
-            prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-blue-800
-            prose-p:text-slate-700 prose-p:leading-relaxed prose-p:text-lg prose-p:mb-4
-            prose-a:text-blue-600 prose-a:no-underline prose-a:font-medium hover:prose-a:text-blue-700 hover:prose-a:underline
-            prose-strong:text-slate-900 prose-strong:font-bold
-            prose-em:text-slate-700
-            prose-code:text-purple-600 prose-code:bg-purple-50 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:font-mono prose-code:text-sm
-            prose-pre:bg-slate-900 prose-pre:border prose-pre:border-slate-700 prose-pre:text-slate-100 prose-pre:whitespace-pre-wrap
-            prose-img:rounded-2xl prose-img:shadow-xl prose-img:my-8
-            prose-blockquote:border-l-4 prose-blockquote:border-l-blue-500 prose-blockquote:bg-blue-50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:text-slate-700 prose-blockquote:not-italic
-            prose-ul:text-slate-700 prose-ul:my-4 prose-ul:list-disc prose-ul:pl-6
-            prose-ol:text-slate-700 prose-ol:my-4 prose-ol:list-decimal prose-ol:pl-6
-            prose-li:text-slate-700 prose-li:my-2
-            prose-li:marker:text-blue-600
-            prose-hr:border-slate-200 prose-hr:my-8
-            prose-table:text-slate-700
-            prose-th:bg-slate-100 prose-th:text-slate-900
-            prose-td:border-slate-200"
+            className="text-slate-700 text-lg"
+            style={{
+              whiteSpace: "pre-line",
+              fontFamily: "inherit",
+              lineHeight: "1.75",
+            }}
             dangerouslySetInnerHTML={{
               __html:
                 typeof post.content === "string"
