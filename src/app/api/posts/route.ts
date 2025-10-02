@@ -98,10 +98,19 @@ export async function GET(request: NextRequest) {
 const processContentForStorage = (content: string) => {
   if (!content) return "";
 
-  // Se já tem tags HTML, retornar sem processar
-  if (content.includes("<p>") || content.includes("<br>")) {
+  // Se já tem tags HTML estruturadas (não apenas <br>), retornar sem processar
+  if (
+    content.includes("</p>") ||
+    content.includes("<ul>") ||
+    content.includes("<ol>")
+  ) {
     return content;
   }
+
+  // Log para debug
+  console.log("📝 Processando conteúdo...");
+  console.log("Tamanho original:", content.length);
+  console.log("Primeiros 200 chars:", content.substring(0, 200));
 
   // Apenas normalizar quebras de linha (Windows/Mac para Unix)
   // Preservando TODOS os caracteres especiais do Word
@@ -111,6 +120,7 @@ const processContentForStorage = (content: string) => {
 
   // Dividir por quebras de linha
   const lines = normalizedContent.split("\n");
+  console.log("Total de linhas:", lines.length);
 
   // Processar linhas agrupando em blocos (parágrafos, listas, etc)
   const blocks: string[] = [];
@@ -191,7 +201,11 @@ const processContentForStorage = (content: string) => {
     blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
   }
 
-  return blocks.join("\n\n");
+  const result = blocks.join("\n\n");
+  console.log("✅ Total de blocos gerados:", blocks.length);
+  console.log("Resultado (primeiros 500 chars):", result.substring(0, 500));
+
+  return result;
 };
 
 // POST /api/posts - Criar novo post

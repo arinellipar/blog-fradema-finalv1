@@ -65,8 +65,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const processContentForStorage = (content: string) => {
       if (!content) return "";
 
-      // Se já tem tags HTML, retornar sem processar
-      if (content.includes("<p>") || content.includes("<br>")) {
+      // Se já tem tags HTML estruturadas (não apenas <br>), retornar sem processar
+      if (
+        content.includes("</p>") ||
+        content.includes("<ul>") ||
+        content.includes("<ol>")
+      ) {
         return content;
       }
 
