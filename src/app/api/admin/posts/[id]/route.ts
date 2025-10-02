@@ -78,17 +78,23 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
       // Dividir por quebras de linha (mantendo linhas vazias)
       const lines = normalizedContent.split("\n");
- 
+
       // Agrupar linhas em parágrafos
       // Linhas vazias (ou apenas com espaços) separam parágrafos
       const paragraphs: string[] = [];
       let currentParagraph: string[] = [];
- 
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        
+
         // Verificar se a linha está completamente vazia (sem nenhum caractere)
-        if (line.length === 0 || (line.trim() === "" && i > 0 && i < lines.length - 1 && lines[i-1].trim() === "")) {
+        if (
+          line.length === 0 ||
+          (line.trim() === "" &&
+            i > 0 &&
+            i < lines.length - 1 &&
+            lines[i - 1].trim() === "")
+        ) {
           // Linha vazia dupla - finalizar parágrafo atual se houver conteúdo
           if (currentParagraph.length > 0) {
             // Juntar linhas com <br>, preservando TODOS os espaços
