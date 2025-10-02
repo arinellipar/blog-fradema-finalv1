@@ -109,53 +109,89 @@ const processContentForStorage = (content: string) => {
     .replace(/\r\n/g, "\n") // Windows
     .replace(/\r/g, "\n"); // Mac antigo
 
-  // Dividir por quebras de linha (mantendo linhas vazias)
+  // Dividir por quebras de linha
   const lines = normalizedContent.split("\n");
 
-  // Agrupar linhas em parágrafos
-  // Linhas vazias (ou apenas com espaços) separam parágrafos
-  const paragraphs: string[] = [];
+  // Processar linhas agrupando em blocos (parágrafos, listas, etc)
+  const blocks: string[] = [];
   let currentParagraph: string[] = [];
+  let currentList: string[] = [];
+  let listType: "ul" | "ol" | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
+    const trimmedLine = line.trim();
 
-    // Verificar se a linha está completamente vazia (sem nenhum caractere)
-    if (
-      line.length === 0 ||
-      (line.trim() === "" &&
-        i > 0 &&
-        i < lines.length - 1 &&
-        lines[i - 1].trim() === "")
-    ) {
-      // Linha vazia dupla - finalizar parágrafo atual se houver conteúdo
+    // Detectar itens de lista (bullets ou números)
+    const isBulletItem =
+      /^[•●○■▪▫➢➣➤➥►▶◆◇✓✔✗✘⚬⚫⚪▸▹◈◉◊◘◙◦◯⦿⦾⦿⦾⦿⦾⦿⦾]\s+/.test(trimmedLine) ||
+      /^[-–—*+]\s+/.test(trimmedLine);
+    const isNumberItem = /^\d+[\.\)]\s+/.test(trimmedLine);
+
+    if (isBulletItem || isNumberItem) {
+      // Item de lista encontrado
+
+      // Se estava em parágrafo, finalizar
       if (currentParagraph.length > 0) {
-        // Juntar linhas com <br>, preservando TODOS os espaços
-        paragraphs.push(currentParagraph.join("<br>"));
+        blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
         currentParagraph = [];
       }
-    } else if (line.trim() === "") {
-      // Linha com apenas espaços - adicionar como linha vazia no parágrafo
+
+      // Determinar tipo de lista
+      const newListType = isNumberItem ? "ol" : "ul";
+
+      // Se mudou o tipo de lista, finalizar lista anterior
+      if (listType && listType !== newListType && currentList.length > 0) {
+        blocks.push(`<${listType}>\n${currentList.join("\n")}\n</${listType}>`);
+        currentList = [];
+      }
+
+      listType = newListType;
+
+      // Remover marcador e adicionar item
+      const itemText = trimmedLine
+        .replace(/^[•●○■▪▫➢➣➤➥►▶◆◇✓✔✗✘⚬⚫⚪▸▹◈◉◊◘◙◦◯⦿⦾⦿⦾⦿⦾⦿⦾\-–—*+]\s+/, "")
+        .replace(/^\d+[\.\)]\s+/, "");
+      currentList.push(`  <li>${itemText}</li>`);
+    } else if (trimmedLine === "") {
+      // Linha vazia
+
+      // Finalizar lista se houver
+      if (currentList.length > 0 && listType) {
+        blocks.push(`<${listType}>\n${currentList.join("\n")}\n</${listType}>`);
+        currentList = [];
+        listType = null;
+      }
+
+      // Finalizar parágrafo se houver
       if (currentParagraph.length > 0) {
-        currentParagraph.push("");
+        blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
+        currentParagraph = [];
       }
     } else {
-      // Adicionar linha ao parágrafo atual preservando espaços à esquerda e direita
+      // Linha normal
+
+      // Se estava em lista, finalizar
+      if (currentList.length > 0 && listType) {
+        blocks.push(`<${listType}>\n${currentList.join("\n")}\n</${listType}>`);
+        currentList = [];
+        listType = null;
+      }
+
+      // Adicionar ao parágrafo atual
       currentParagraph.push(line);
     }
   }
 
-  // Adicionar último parágrafo se houver
+  // Finalizar blocos pendentes
+  if (currentList.length > 0 && listType) {
+    blocks.push(`<${listType}>\n${currentList.join("\n")}\n</${listType}>`);
+  }
   if (currentParagraph.length > 0) {
-    paragraphs.push(currentParagraph.join("<br>"));
+    blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
   }
 
-  // Envolver cada parágrafo em tags <p>
-  const processedParagraphs = paragraphs
-    .filter((p) => p.trim().length > 0) // Só filtrar parágrafos completamente vazios
-    .map((p) => `<p>${p}</p>`);
-
-  return processedParagraphs.join("\n\n");
+  return blocks.join("\n\n");
 };
 
 // POST /api/posts - Criar novo post
