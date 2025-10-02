@@ -70,19 +70,40 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         return content;
       }
 
-      // Dividir por parágrafos (quebra de linha dupla ou mais)
-      const paragraphs = content.split(/\n\s*\n+/);
-
-      // Processar cada parágrafo
+      // Preservar formatação original ao colar texto
+      // Dividir por quebras de linha simples primeiro
+      const lines = content.split(/\n/);
+      
+      // Agrupar linhas em parágrafos (linhas vazias separam parágrafos)
+      const paragraphs: string[] = [];
+      let currentParagraph: string[] = [];
+      
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        
+        if (trimmedLine === "") {
+          // Linha vazia - finalizar parágrafo atual se houver conteúdo
+          if (currentParagraph.length > 0) {
+            paragraphs.push(currentParagraph.join("<br>"));
+            currentParagraph = [];
+          }
+        } else {
+          // Adicionar linha ao parágrafo atual
+          currentParagraph.push(trimmedLine);
+        }
+      }
+      
+      // Adicionar último parágrafo se houver
+      if (currentParagraph.length > 0) {
+        paragraphs.push(currentParagraph.join("<br>"));
+      }
+      
+      // Envolver cada parágrafo em tags <p>
       const processedParagraphs = paragraphs
-        .filter((p) => p.trim().length > 0)
-        .map((p) => {
-          // Substituir quebras de linha simples por <br>
-          const withBreaks = p.trim().replace(/\n/g, "<br>");
-          return `<p>${withBreaks}</p>`;
-        });
+        .filter(p => p.length > 0)
+        .map(p => `<p>${p}</p>`);
 
-      return processedParagraphs.join("\n");
+      return processedParagraphs.join("\n\n");
     };
 
     // Verificar se o post existe
