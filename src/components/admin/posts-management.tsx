@@ -93,6 +93,7 @@ interface Post {
   slug: string;
   excerpt?: string;
   mainImage?: string;
+  content?: string;
   published: boolean;
   publishedAt?: Date;
   createdAt: Date;
@@ -153,6 +154,7 @@ interface EditPostData {
   excerpt: string;
   published: boolean;
   mainImage?: string;
+  content?: string;
 }
 
 type DialogType = "edit" | "delete" | "view" | "analytics";
@@ -189,6 +191,7 @@ export function PostsManagement({
     excerpt: "",
     published: false,
     mainImage: "",
+    content: "",
   });
   const [uploadingImage, setUploadingImage] = React.useState(false);
   const [imagePreview, setImagePreview] = React.useState<string>("");
@@ -273,6 +276,7 @@ export function PostsManagement({
         excerpt: post.excerpt || "",
         published: post.published,
         mainImage: post.mainImage || "",
+        content: post.content || "",
       });
       setImagePreview(post.mainImage || "");
     }
@@ -963,6 +967,23 @@ export function PostsManagement({
                       }
                       placeholder="Descrição do post"
                       rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="content">Conteúdo</Label>
+                    <Textarea
+                      id="content"
+                      value={editData.content}
+                      onChange={(e) =>
+                        setEditData((prev) => ({
+                          ...prev,
+                          content: e.target.value,
+                        }))
+                      }
+                      placeholder="Conteúdo do artigo..."
+                      rows={10}
+                      className="min-h-[200px]"
                     />
                   </div>
 

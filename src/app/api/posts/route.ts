@@ -94,6 +94,23 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// Função para processar o conteúdo e converter para HTML
+const processContentForStorage = (content: string) => {
+  if (!content) return "";
+
+  // Converter quebras de linha duplas para parágrafos
+  let processedContent = content
+    .replace(/\n\s*\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
+
+  // Envolver tudo em parágrafos se não estiver envolto
+  if (!processedContent.includes("<p>")) {
+    processedContent = `<p>${processedContent}</p>`;
+  }
+
+  return processedContent;
+};
+
 // POST /api/posts - Criar novo post
 export async function POST(request: NextRequest) {
   try {
@@ -146,7 +163,7 @@ export async function POST(request: NextRequest) {
       data: {
         title,
         slug: uniqueSlug,
-        content,
+        content: processContentForStorage(content),
         excerpt: description || "",
         mainImage,
         published,

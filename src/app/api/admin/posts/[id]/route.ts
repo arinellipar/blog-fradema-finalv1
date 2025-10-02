@@ -59,7 +59,24 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     }
 
     const body = await request.json();
-    const { title, published, excerpt, mainImage } = body;
+    const { title, published, excerpt, mainImage, content } = body;
+
+    // Função para processar o conteúdo e converter para HTML
+    const processContentForStorage = (content: string) => {
+      if (!content) return "";
+
+      // Converter quebras de linha duplas para parágrafos
+      let processedContent = content
+        .replace(/\n\s*\n/g, "</p><p>")
+        .replace(/\n/g, "<br>");
+
+      // Envolver tudo em parágrafos se não estiver envolto
+      if (!processedContent.includes("<p>")) {
+        processedContent = `<p>${processedContent}</p>`;
+      }
+
+      return processedContent;
+    };
 
     // Verificar se o post existe
     const existingPost = await db.post.findUnique({
@@ -85,6 +102,7 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         ...(title && { title }),
         ...(excerpt && { excerpt }),
         ...(typeof mainImage === "string" && { mainImage }),
+        ...(content && { content: processContentForStorage(content) }),
         ...(typeof published === "boolean" && {
           published,
           publishedAt: published

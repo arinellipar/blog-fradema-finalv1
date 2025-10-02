@@ -45,6 +45,23 @@ import { formatDate, ROUTES } from "@/lib/utils";
 import { Comments } from "@/components/blog/comments";
 import { UserRole } from "@/types/auth";
 
+// Função para processar o conteúdo e converter para HTML
+const processContent = (content: string) => {
+  if (!content) return "";
+
+  // Converter quebras de linha duplas para parágrafos
+  let processedContent = content
+    .replace(/\n\s*\n/g, "</p><p>")
+    .replace(/\n/g, "<br>");
+
+  // Envolver tudo em parágrafos se não estiver envolto
+  if (!processedContent.includes("<p>")) {
+    processedContent = `<p>${processedContent}</p>`;
+  }
+
+  return processedContent;
+};
+
 interface Post {
   id: string;
   title: string;
@@ -567,10 +584,11 @@ export default function BlogPostPage() {
             prose-th:bg-slate-100 prose-th:text-slate-900
             prose-td:border-slate-200"
             dangerouslySetInnerHTML={{
-              __html:
+              __html: processContent(
                 typeof post.content === "string"
                   ? post.content
-                  : String(post.content || ""),
+                  : String(post.content || "")
+              ),
             }}
           />
 
