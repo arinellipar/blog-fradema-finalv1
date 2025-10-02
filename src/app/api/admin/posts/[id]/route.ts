@@ -70,38 +70,44 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         return content;
       }
 
-      // Preservar formatação original ao colar texto
-      // Dividir por quebras de linha simples primeiro
-      const lines = content.split(/\n/);
-      
-      // Agrupar linhas em parágrafos (linhas vazias separam parágrafos)
+      // Apenas normalizar quebras de linha (Windows/Mac para Unix)
+      // Preservando TODOS os caracteres especiais do Word
+      const normalizedContent = content
+        .replace(/\r\n/g, "\n") // Windows
+        .replace(/\r/g, "\n"); // Mac antigo
+
+      // Dividir por quebras de linha (mantendo linhas vazias)
+      const lines = normalizedContent.split("\n");
+
+      // Agrupar linhas em parágrafos
+      // Linhas vazias (ou apenas com espaços) separam parágrafos
       const paragraphs: string[] = [];
       let currentParagraph: string[] = [];
-      
+
       for (const line of lines) {
-        const trimmedLine = line.trim();
-        
-        if (trimmedLine === "") {
+        // Verificar se a linha está vazia (permite espaços em branco)
+        if (line.trim() === "") {
           // Linha vazia - finalizar parágrafo atual se houver conteúdo
           if (currentParagraph.length > 0) {
+            // Juntar linhas com <br>, preservando espaços e caracteres
             paragraphs.push(currentParagraph.join("<br>"));
             currentParagraph = [];
           }
         } else {
-          // Adicionar linha ao parágrafo atual
-          currentParagraph.push(trimmedLine);
+          // Adicionar linha ao parágrafo atual (SEM trim - preserva espaços)
+          currentParagraph.push(line);
         }
       }
-      
+
       // Adicionar último parágrafo se houver
       if (currentParagraph.length > 0) {
         paragraphs.push(currentParagraph.join("<br>"));
       }
-      
+
       // Envolver cada parágrafo em tags <p>
       const processedParagraphs = paragraphs
-        .filter(p => p.length > 0)
-        .map(p => `<p>${p}</p>`);
+        .filter((p) => p.trim().length > 0) // Só filtrar parágrafos completamente vazios
+        .map((p) => `<p>${p}</p>`);
 
       return processedParagraphs.join("\n\n");
     };
