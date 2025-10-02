@@ -889,11 +889,17 @@ export default function NovoPostPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
+                  <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
+                    💡 <strong>Dica:</strong> Cole seu texto do Word
+                    diretamente. A formatação (parágrafos, listas) será
+                    preservada automaticamente.
+                  </div>
                   <Textarea
                     {...register("content")}
                     placeholder="Escreva o conteúdo do seu artigo aqui..."
                     rows={20}
-                    className="resize-y min-h-[400px]"
+                    className="resize-y min-h-[400px] font-mono"
+                    style={{ whiteSpace: "pre-wrap" }}
                   />
                   {errors.content && (
                     <p className="mt-2 text-sm text-red-600">

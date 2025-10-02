@@ -128,6 +128,27 @@ const processContentForStorage = (content: string) => {
   let currentList: string[] = [];
   let listType: "ul" | "ol" | null = null;
 
+  // Detectar se parece uma lista (várias linhas curtas consecutivas)
+  const detectListPattern = () => {
+    let shortLines = 0;
+    for (let i = 0; i < Math.min(lines.length, 10); i++) {
+      const line = lines[i].trim();
+      if (
+        line.length > 0 &&
+        line.length < 60 &&
+        !line.endsWith(".") &&
+        !line.endsWith("?") &&
+        !line.endsWith(":")
+      ) {
+        shortLines++;
+      }
+    }
+    return shortLines >= 3; // Se tiver 3+ linhas curtas, provavelmente é lista
+  };
+
+  const looksLikeList = detectListPattern();
+  let consecutiveShortLines = 0;
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const trimmedLine = line.trim();
@@ -138,17 +159,33 @@ const processContentForStorage = (content: string) => {
       /^[-–—*+]\s+/.test(trimmedLine);
     const isNumberItem = /^\d+[\.\)]\s+/.test(trimmedLine);
 
-    if (isBulletItem || isNumberItem) {
+    // Detectar linha curta que parece item de lista (sem pontuação final)
+    const isShortLine =
+      trimmedLine.length > 0 &&
+      trimmedLine.length < 60 &&
+      !trimmedLine.endsWith(".") &&
+      !trimmedLine.endsWith("?") &&
+      !trimmedLine.endsWith(":") &&
+      !trimmedLine.endsWith(",");
+
+    if (isShortLine) {
+      consecutiveShortLines++;
+    } else if (trimmedLine === "") {
+      consecutiveShortLines = 0;
+    }
+
+    // Se detectar padrão de lista, tratar linhas curtas como itens
+    const shouldBeListItem =
+      isBulletItem ||
+      isNumberItem ||
+      (looksLikeList && isShortLine && consecutiveShortLines >= 1);
+
+    if (shouldBeListItem) {
       // Item de lista encontrado
 
       // Se estava em parágrafo, finalizar
       if (currentParagraph.length > 0) {
-        // Criar um parágrafo separado para cada linha
-        currentParagraph.forEach((paragraphLine) => {
-          if (paragraphLine.trim()) {
-            blocks.push(`<p>${paragraphLine}</p>`);
-          }
-        });
+        blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
         currentParagraph = [];
       }
 
@@ -161,9 +198,9 @@ const processContentForStorage = (content: string) => {
         currentList = [];
       }
 
-      listType = newListType;
+      listType = newListType || "ul"; // Default para ul se não for número
 
-      // Remover marcador e adicionar item
+      // Remover marcador se houver e adicionar item
       const itemText = trimmedLine
         .replace(/^[•●○■▪▫➢➣➤➥►▶◆◇✓✔✗✘⚬⚫⚪▸▹◈◉◊◘◙◦◯⦿⦾⦿⦾⦿⦾⦿⦾\-–—*+]\s+/, "")
         .replace(/^\d+[\.\)]\s+/, "");
@@ -180,12 +217,7 @@ const processContentForStorage = (content: string) => {
 
       // Finalizar parágrafo se houver
       if (currentParagraph.length > 0) {
-        // Criar um parágrafo separado para cada linha
-        currentParagraph.forEach((paragraphLine) => {
-          if (paragraphLine.trim()) {
-            blocks.push(`<p>${paragraphLine}</p>`);
-          }
-        });
+        blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
         currentParagraph = [];
       }
     } else {
@@ -198,7 +230,7 @@ const processContentForStorage = (content: string) => {
         listType = null;
       }
 
-      // Adicionar ao parágrafo atual (cada linha vira um parágrafo)
+      // Adicionar ao parágrafo atual
       currentParagraph.push(line);
     }
   }
@@ -208,12 +240,7 @@ const processContentForStorage = (content: string) => {
     blocks.push(`<${listType}>\n${currentList.join("\n")}\n</${listType}>`);
   }
   if (currentParagraph.length > 0) {
-    // Criar um parágrafo separado para cada linha
-    currentParagraph.forEach((paragraphLine) => {
-      if (paragraphLine.trim()) {
-        blocks.push(`<p>${paragraphLine}</p>`);
-      }
-    });
+    blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
   }
 
   const result = blocks.join("\n\n");
