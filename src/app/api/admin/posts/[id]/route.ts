@@ -65,17 +65,24 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const processContentForStorage = (content: string) => {
       if (!content) return "";
 
-      // Converter quebras de linha duplas para parágrafos
-      let processedContent = content
-        .replace(/\n\s*\n/g, "</p><p>")
-        .replace(/\n/g, "<br>");
-
-      // Envolver tudo em parágrafos se não estiver envolto
-      if (!processedContent.includes("<p>")) {
-        processedContent = `<p>${processedContent}</p>`;
+      // Se já tem tags HTML, retornar sem processar
+      if (content.includes("<p>") || content.includes("<br>")) {
+        return content;
       }
 
-      return processedContent;
+      // Dividir por parágrafos (quebra de linha dupla ou mais)
+      const paragraphs = content.split(/\n\s*\n+/);
+
+      // Processar cada parágrafo
+      const processedParagraphs = paragraphs
+        .filter((p) => p.trim().length > 0)
+        .map((p) => {
+          // Substituir quebras de linha simples por <br>
+          const withBreaks = p.trim().replace(/\n/g, "<br>");
+          return `<p>${withBreaks}</p>`;
+        });
+
+      return processedParagraphs.join("\n");
     };
 
     // Verificar se o post existe
