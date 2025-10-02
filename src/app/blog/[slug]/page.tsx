@@ -550,7 +550,7 @@ export default function BlogPostPage() {
             prose-h1:text-4xl prose-h1:mb-6
             prose-h2:text-3xl prose-h2:mt-8 prose-h2:mb-4 prose-h2:text-blue-900
             prose-h3:text-2xl prose-h3:mt-6 prose-h3:mb-3 prose-h3:text-blue-800
-            prose-p:text-slate-700 prose-p:leading-relaxed prose-p:text-lg prose-p:mb-4
+            prose-p:text-slate-700 prose-p:leading-relaxed prose-p:text-lg prose-p:mb-4 prose-p:whitespace-pre-wrap
             prose-a:text-blue-600 prose-a:no-underline prose-a:font-medium hover:prose-a:text-blue-700 hover:prose-a:underline
             prose-strong:text-slate-900 prose-strong:font-bold
             prose-em:text-slate-700
@@ -566,6 +566,7 @@ export default function BlogPostPage() {
             prose-table:text-slate-700
             prose-th:bg-slate-100 prose-th:text-slate-900
             prose-td:border-slate-200"
+            style={{ whiteSpace: 'pre-wrap' }}
             dangerouslySetInnerHTML={{
               __html:
                 typeof post.content === "string"
