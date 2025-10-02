@@ -143,7 +143,12 @@ const processContentForStorage = (content: string) => {
 
       // Se estava em parágrafo, finalizar
       if (currentParagraph.length > 0) {
-        blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
+        // Criar um parágrafo separado para cada linha
+        currentParagraph.forEach((paragraphLine) => {
+          if (paragraphLine.trim()) {
+            blocks.push(`<p>${paragraphLine}</p>`);
+          }
+        });
         currentParagraph = [];
       }
 
@@ -175,7 +180,12 @@ const processContentForStorage = (content: string) => {
 
       // Finalizar parágrafo se houver
       if (currentParagraph.length > 0) {
-        blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
+        // Criar um parágrafo separado para cada linha
+        currentParagraph.forEach((paragraphLine) => {
+          if (paragraphLine.trim()) {
+            blocks.push(`<p>${paragraphLine}</p>`);
+          }
+        });
         currentParagraph = [];
       }
     } else {
@@ -188,7 +198,7 @@ const processContentForStorage = (content: string) => {
         listType = null;
       }
 
-      // Adicionar ao parágrafo atual
+      // Adicionar ao parágrafo atual (cada linha vira um parágrafo)
       currentParagraph.push(line);
     }
   }
@@ -198,7 +208,12 @@ const processContentForStorage = (content: string) => {
     blocks.push(`<${listType}>\n${currentList.join("\n")}\n</${listType}>`);
   }
   if (currentParagraph.length > 0) {
-    blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
+    // Criar um parágrafo separado para cada linha
+    currentParagraph.forEach((paragraphLine) => {
+      if (paragraphLine.trim()) {
+        blocks.push(`<p>${paragraphLine}</p>`);
+      }
+    });
   }
 
   const result = blocks.join("\n\n");
@@ -210,12 +225,17 @@ const processContentForStorage = (content: string) => {
 
 // POST /api/posts - Criar novo post
 export async function POST(request: NextRequest) {
+  console.log("\n\n🚀🚀🚀 API POST /api/posts CHAMADA! 🚀🚀🚀\n");
+
   try {
     // Verificar autenticação
     const authResult = await getAuthGuard(request);
     if (!authResult.isAuthenticated || !authResult.user) {
+      console.log("❌ Usuário não autenticado");
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
+
+    console.log("✅ Usuário autenticado:", authResult.user.name);
 
     const body = await request.json();
     const {
@@ -227,6 +247,11 @@ export async function POST(request: NextRequest) {
       tags,
       published = false,
     } = body;
+
+    console.log("📦 Dados recebidos:");
+    console.log("- Título:", title);
+    console.log("- Descrição:", description?.substring(0, 50));
+    console.log("- Conteúdo (tamanho):", content?.length || 0);
 
     // Validações básicas
     if (!title || !content) {
@@ -255,12 +280,29 @@ export async function POST(request: NextRequest) {
       uniqueSlug = `${slug}-${Date.now()}`;
     }
 
+    console.log("==============================================");
+    console.log("🔵 NOVO POST - Conteúdo ANTES do processamento:");
+    console.log("Tamanho:", content?.length || 0);
+    console.log("Primeiros 300 chars:", content?.substring(0, 300) || "vazio");
+    console.log("==============================================");
+
+    const processedContent = processContentForStorage(content);
+
+    console.log("==============================================");
+    console.log("🟢 NOVO POST - Conteúdo DEPOIS do processamento:");
+    console.log("Tamanho:", processedContent?.length || 0);
+    console.log(
+      "Primeiros 300 chars:",
+      processedContent?.substring(0, 300) || "vazio"
+    );
+    console.log("==============================================");
+
     // Criar o post
     const post = await prisma.post.create({
       data: {
         title,
         slug: uniqueSlug,
-        content: processContentForStorage(content),
+        content: processedContent,
         excerpt: description || "",
         mainImage,
         published,

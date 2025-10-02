@@ -104,7 +104,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
           // Se estava em parágrafo, finalizar
           if (currentParagraph.length > 0) {
-            blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
+            // Criar um parágrafo separado para cada linha
+            currentParagraph.forEach((paragraphLine) => {
+              if (paragraphLine.trim()) {
+                blocks.push(`<p>${paragraphLine}</p>`);
+              }
+            });
             currentParagraph = [];
           }
 
@@ -140,7 +145,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
 
           // Finalizar parágrafo se houver
           if (currentParagraph.length > 0) {
-            blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
+            // Criar um parágrafo separado para cada linha
+            currentParagraph.forEach((paragraphLine) => {
+              if (paragraphLine.trim()) {
+                blocks.push(`<p>${paragraphLine}</p>`);
+              }
+            });
             currentParagraph = [];
           }
         } else {
@@ -165,7 +175,12 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         blocks.push(`<${listType}>\n${currentList.join("\n")}\n</${listType}>`);
       }
       if (currentParagraph.length > 0) {
-        blocks.push(`<p>${currentParagraph.join("<br>")}</p>`);
+        // Criar um parágrafo separado para cada linha
+        currentParagraph.forEach((paragraphLine) => {
+          if (paragraphLine.trim()) {
+            blocks.push(`<p>${paragraphLine}</p>`);
+          }
+        });
       }
 
       return blocks.join("\n\n");
