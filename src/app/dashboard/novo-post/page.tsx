@@ -59,7 +59,7 @@ const BlogPostSchema = z.object({
   title: z
     .string()
     .min(5, "Título deve ter pelo menos 5 caracteres")
-    .max(120, "Título não pode exceder 120 caracteres"),
+    .max(180, "Título não pode exceder 180 caracteres"),
 
   subtitle: z
     .string()
@@ -594,7 +594,7 @@ export default function NovoPostPage() {
                         errorMessage={errors.title?.message}
                       />
                       <div className="mt-1 text-xs text-gray-500">
-                        {watchedTitle?.length || 0}/120 caracteres
+                        {watchedTitle?.length || 0}/180 caracteres
                       </div>
                     </div>
 
