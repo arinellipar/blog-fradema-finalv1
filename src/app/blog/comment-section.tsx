@@ -45,20 +45,23 @@ export function CommentSection({
         const apiComments = await response.json();
 
         // Converter comentários da API para o formato esperado
-        const convertedComments: Comment[] = apiComments.map((comment: any) => ({
-          id: comment.id,
-          author: comment.author.name,
-          avatar: comment.author.avatar,
-          content: comment.content,
-          date: comment.createdAt,
-          replies: comment.replies?.map((reply: any) => ({
-            id: reply.id,
-            author: reply.author.name,
-            avatar: reply.author.avatar,
-            content: reply.content,
-            date: reply.createdAt,
-          })) || [],
-        }));
+        const convertedComments: Comment[] = apiComments.map(
+          (comment: any) => ({
+            id: comment.id,
+            author: comment.author.name,
+            avatar: comment.author.avatar,
+            content: comment.content,
+            date: comment.createdAt,
+            replies:
+              comment.replies?.map((reply: any) => ({
+                id: reply.id,
+                author: reply.author.name,
+                avatar: reply.author.avatar,
+                content: reply.content,
+                date: reply.createdAt,
+              })) || [],
+          })
+        );
 
         setComments(convertedComments);
       } catch (error) {
@@ -124,7 +127,7 @@ export function CommentSection({
       };
 
       setComments((prev) => [comment, ...prev]);
-      setNewComment({ author: "", content: "" });
+      setNewComment({ content: "" });
 
       console.log("Comentário adicionado:", comment);
     } catch (error) {
@@ -302,10 +305,7 @@ export function CommentSection({
 
           <Button
             type="submit"
-            disabled={
-              isSubmitting ||
-              !newComment.content.trim()
-            }
+            disabled={isSubmitting || !newComment.content.trim()}
           >
             {isSubmitting ? "Enviando..." : "Publicar Comentário"}
           </Button>
