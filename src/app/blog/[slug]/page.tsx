@@ -51,6 +51,7 @@ interface Post {
   slug: string;
   content: string;
   excerpt?: string;
+  mainImage?: string;
   published: boolean;
   authorId: string;
   author: {
@@ -327,7 +328,7 @@ export default function BlogPostPage() {
       {/* Hero Section */}
       <div className="relative">
         {/* Imagem Hero com Overlay Gradiente */}
-        {post.mainImage && (
+        {post.mainImage ? (
           <motion.div
             initial={{ scale: 1.1, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -359,9 +360,26 @@ export default function BlogPostPage() {
               />
             </div>
           </motion.div>
+        ) : (
+          // Fundo gradiente quando não há imagem
+          <div className="relative w-full h-[40vh] bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+            <div className="absolute inset-0">
+              <motion.div
+                animate={{
+                  background: [
+                    "radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
+                    "radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)",
+                    "radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
+                  ],
+                }}
+                transition={{ duration: 8, repeat: Infinity }}
+                className="absolute inset-0"
+              />
+            </div>
+          </div>
         )}
 
-        {/* Content Over Image */}
+        {/* Content Over Image or Background */}
         <div className="absolute bottom-0 left-0 right-0 pb-12">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Categorias */}
