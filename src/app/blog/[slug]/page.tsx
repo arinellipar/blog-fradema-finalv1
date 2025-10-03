@@ -327,26 +327,225 @@ export default function BlogPostPage() {
 
       {/* Hero Section */}
       <div className="relative">
-        {/* Imagem Hero com Overlay Gradiente */}
         {post.mainImage ? (
-          <motion.div
-            initial={{ scale: 1.1, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.7 }}
-            className="relative w-full h-[60vh] md:h-[70vh] overflow-hidden"
-          >
-            <Image
-              src={post.mainImage}
-              alt={post.title}
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+          // COM IMAGEM: Layout com imagem de fundo e conteúdo absolute
+          <>
+            <motion.div
+              initial={{ scale: 1.1, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.7 }}
+              className="relative w-full h-[60vh] md:h-[70vh] overflow-hidden"
+            >
+              <Image
+                src={post.mainImage}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
 
-            {/* Animated Overlay Effects */}
+              {/* Animated Overlay Effects */}
+              <div className="absolute inset-0">
+                <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 to-transparent opacity-50" />
+                <motion.div
+                  animate={{
+                    background: [
+                      "radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
+                      "radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)",
+                      "radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
+                    ],
+                  }}
+                  transition={{ duration: 8, repeat: Infinity }}
+                  className="absolute inset-0"
+                />
+              </div>
+            </motion.div>
+
+            {/* Conteúdo sobre a imagem */}
+            <div className="absolute inset-0 flex flex-col justify-end py-12 overflow-y-auto">
+              <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+                {/* Categorias */}
+                {post.categories.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-wrap gap-2 mb-6"
+                  >
+                    {post.categories.map(({ category }) => (
+                      <Badge
+                        key={category.id}
+                        className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 text-white px-4 py-1.5 text-sm"
+                      >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        {category.name}
+                      </Badge>
+                    ))}
+                  </motion.div>
+                )}
+
+                {/* Título */}
+                <motion.h1
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
+                >
+                  {post.title}
+                </motion.h1>
+
+                {/* Excerpt */}
+                {post.excerpt && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-xl md:text-2xl text-blue-200/90 mb-8 max-w-3xl leading-relaxed"
+                  >
+                    {post.excerpt}
+                  </motion.p>
+                )}
+
+                {/* Meta Info Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex flex-wrap items-center gap-6 p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10"
+                >
+                  {/* Autor */}
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 ring-2 ring-blue-400/50">
+                      <AvatarImage src={post.author.avatar} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {post.author.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold text-white">
+                        {post.author.name}
+                      </p>
+                      <p className="text-xs text-blue-300">
+                        {post.author.role}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Separator
+                    orientation="vertical"
+                    className="h-12 bg-white/10"
+                  />
+
+                  {/* Data */}
+                  <div className="flex items-center gap-2 text-blue-200">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-sm">
+                      {formatDate(post.publishedAt || post.createdAt)}
+                    </span>
+                  </div>
+
+                  {/* Tempo de leitura */}
+                  {post.readingTime && (
+                    <>
+                      <Separator
+                        orientation="vertical"
+                        className="h-12 bg-white/10 hidden sm:block"
+                      />
+                      <div className="flex items-center gap-2 text-blue-200">
+                        <Clock className="w-4 h-4" />
+                        <span className="text-sm">{post.readingTime} min</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Trending Icon */}
+                  <div className="ml-auto hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30">
+                    <TrendingUp className="w-4 h-4 text-orange-400" />
+                    <span className="text-sm text-orange-300 font-medium">
+                      Em Alta
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* Action Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="flex flex-wrap items-center gap-3 mt-6"
+                >
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg shadow-blue-500/50">
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Compartilhar
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-56 bg-slate-900/95 backdrop-blur-xl border-white/10"
+                    >
+                      <DropdownMenuItem
+                        onClick={shareToWhatsApp}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2 text-green-400" />
+                        <span>WhatsApp</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={shareToInstagram}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <Instagram className="w-4 h-4 mr-2 text-pink-400" />
+                        <span>Instagram</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-white/10" />
+                      <DropdownMenuItem
+                        onClick={shareToFacebook}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <Facebook className="w-4 h-4 mr-2 text-blue-400" />
+                        <span>Facebook</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={shareToTwitter}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <Twitter className="w-4 h-4 mr-2 text-sky-400" />
+                        <span>Twitter / X</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-white/10" />
+                      <DropdownMenuItem
+                        onClick={copyToClipboard}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <LinkIcon className="w-4 h-4 mr-2" />
+                        <span>Copiar link</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <Button
+                    variant="outline"
+                    onClick={handleBookmark}
+                    className="bg-white/5 backdrop-blur border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                  >
+                    <BookmarkPlus className="w-4 h-4 mr-2" />
+                    Salvar
+                  </Button>
+                </motion.div>
+              </div>
+            </div>
+          </>
+        ) : (
+          // SEM IMAGEM: Layout com fundo gradiente e conteúdo relativo
+          <div className="relative w-full bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
             <div className="absolute inset-0">
-              <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-blue-500/20 to-transparent opacity-50" />
               <motion.div
                 animate={{
                   background: [
@@ -359,198 +558,188 @@ export default function BlogPostPage() {
                 className="absolute inset-0"
               />
             </div>
-          </motion.div>
-        ) : (
-          // Fundo gradiente quando não há imagem
-          <div className="relative w-full h-[40vh] bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
-            <div className="absolute inset-0">
-              <motion.div
-                animate={{
-                  background: [
-                    "radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
-                    "radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%)",
-                    "radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%)",
-                  ],
-                }}
-                transition={{ duration: 8, repeat: Infinity }}
-                className="absolute inset-0"
-              />
+
+            {/* Conteúdo com altura flexível */}
+            <div className="relative py-12 min-h-[60vh]">
+              <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                {/* Categorias */}
+                {post.categories.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-wrap gap-2 mb-6"
+                  >
+                    {post.categories.map(({ category }) => (
+                      <Badge
+                        key={category.id}
+                        className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 text-white px-4 py-1.5 text-sm"
+                      >
+                        <Sparkles className="w-3 h-3 mr-1" />
+                        {category.name}
+                      </Badge>
+                    ))}
+                  </motion.div>
+                )}
+
+                {/* Título */}
+                <motion.h1
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
+                >
+                  {post.title}
+                </motion.h1>
+
+                {/* Excerpt */}
+                {post.excerpt && (
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-xl md:text-2xl text-blue-200/90 mb-8 max-w-3xl leading-relaxed"
+                  >
+                    {post.excerpt}
+                  </motion.p>
+                )}
+
+                {/* Meta Info Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="flex flex-wrap items-center gap-6 p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10"
+                >
+                  {/* Autor */}
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-12 w-12 ring-2 ring-blue-400/50">
+                      <AvatarImage src={post.author.avatar} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
+                        {post.author.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-semibold text-white">
+                        {post.author.name}
+                      </p>
+                      <p className="text-xs text-blue-300">
+                        {post.author.role}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Separator
+                    orientation="vertical"
+                    className="h-12 bg-white/10"
+                  />
+
+                  {/* Data */}
+                  <div className="flex items-center gap-2 text-blue-200">
+                    <Calendar className="w-4 h-4" />
+                    <span className="text-sm">
+                      {formatDate(post.publishedAt || post.createdAt)}
+                    </span>
+                  </div>
+
+                  {/* Tempo de leitura */}
+                  {post.readingTime && (
+                    <>
+                      <Separator
+                        orientation="vertical"
+                        className="h-12 bg-white/10 hidden sm:block"
+                      />
+                      <div className="flex items-center gap-2 text-blue-200">
+                        <Clock className="w-4 h-4" />
+                        <span className="text-sm">{post.readingTime} min</span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Trending Icon */}
+                  <div className="ml-auto hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30">
+                    <TrendingUp className="w-4 h-4 text-orange-400" />
+                    <span className="text-sm text-orange-300 font-medium">
+                      Em Alta
+                    </span>
+                  </div>
+                </motion.div>
+
+                {/* Action Buttons */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="flex flex-wrap items-center gap-3 mt-6"
+                >
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg shadow-blue-500/50">
+                        <Share2 className="w-4 h-4 mr-2" />
+                        Compartilhar
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="start"
+                      className="w-56 bg-slate-900/95 backdrop-blur-xl border-white/10"
+                    >
+                      <DropdownMenuItem
+                        onClick={shareToWhatsApp}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <MessageSquare className="w-4 h-4 mr-2 text-green-400" />
+                        <span>WhatsApp</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={shareToInstagram}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <Instagram className="w-4 h-4 mr-2 text-pink-400" />
+                        <span>Instagram</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-white/10" />
+                      <DropdownMenuItem
+                        onClick={shareToFacebook}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <Facebook className="w-4 h-4 mr-2 text-blue-400" />
+                        <span>Facebook</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={shareToTwitter}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <Twitter className="w-4 h-4 mr-2 text-sky-400" />
+                        <span>Twitter / X</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-white/10" />
+                      <DropdownMenuItem
+                        onClick={copyToClipboard}
+                        className="text-white hover:bg-white/10"
+                      >
+                        <LinkIcon className="w-4 h-4 mr-2" />
+                        <span>Copiar link</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <Button
+                    variant="outline"
+                    onClick={handleBookmark}
+                    className="bg-white/5 backdrop-blur border-white/20 text-white hover:bg-white/10 hover:border-white/30"
+                  >
+                    <BookmarkPlus className="w-4 h-4 mr-2" />
+                    Salvar
+                  </Button>
+                </motion.div>
+              </div>
             </div>
           </div>
         )}
-
-        {/* Content Over Image or Background */}
-        <div className="absolute bottom-0 left-0 right-0 pb-12">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Categorias */}
-            {post.categories.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="flex flex-wrap gap-2 mb-6"
-              >
-                {post.categories.map(({ category }) => (
-                  <Badge
-                    key={category.id}
-                    className="bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-white/20 text-white px-4 py-1.5 text-sm"
-                  >
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    {category.name}
-                  </Badge>
-                ))}
-              </motion.div>
-            )}
-
-            {/* Título */}
-            <motion.h1
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
-            >
-              {post.title}
-            </motion.h1>
-
-            {/* Excerpt */}
-            {post.excerpt && (
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="text-xl md:text-2xl text-blue-200/90 mb-8 max-w-3xl leading-relaxed"
-              >
-                {post.excerpt}
-              </motion.p>
-            )}
-
-            {/* Meta Info Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-              className="flex flex-wrap items-center gap-6 p-6 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10"
-            >
-              {/* Autor */}
-              <div className="flex items-center gap-3">
-                <Avatar className="h-12 w-12 ring-2 ring-blue-400/50">
-                  <AvatarImage src={post.author.avatar} />
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-500 text-white">
-                    {post.author.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")
-                      .toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="font-semibold text-white">{post.author.name}</p>
-                  <p className="text-xs text-blue-300">{post.author.role}</p>
-                </div>
-              </div>
-
-              <Separator orientation="vertical" className="h-12 bg-white/10" />
-
-              {/* Data */}
-              <div className="flex items-center gap-2 text-blue-200">
-                <Calendar className="w-4 h-4" />
-                <span className="text-sm">
-                  {formatDate(post.publishedAt || post.createdAt)}
-                </span>
-              </div>
-
-              {/* Tempo de leitura */}
-              {post.readingTime && (
-                <>
-                  <Separator
-                    orientation="vertical"
-                    className="h-12 bg-white/10 hidden sm:block"
-                  />
-                  <div className="flex items-center gap-2 text-blue-200">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-sm">{post.readingTime} min</span>
-                  </div>
-                </>
-              )}
-
-              {/* Trending Icon */}
-              <div className="ml-auto hidden lg:flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30">
-                <TrendingUp className="w-4 h-4 text-orange-400" />
-                <span className="text-sm text-orange-300 font-medium">
-                  Em Alta
-                </span>
-              </div>
-            </motion.div>
-
-            {/* Action Buttons */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 }}
-              className="flex flex-wrap items-center gap-3 mt-6"
-            >
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button className="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-lg shadow-blue-500/50">
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Compartilhar
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-56 bg-slate-900/95 backdrop-blur-xl border-white/10"
-                >
-                  <DropdownMenuItem
-                    onClick={shareToWhatsApp}
-                    className="text-white hover:bg-white/10"
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2 text-green-400" />
-                    <span>WhatsApp</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={shareToInstagram}
-                    className="text-white hover:bg-white/10"
-                  >
-                    <Instagram className="w-4 h-4 mr-2 text-pink-400" />
-                    <span>Instagram</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuItem
-                    onClick={shareToFacebook}
-                    className="text-white hover:bg-white/10"
-                  >
-                    <Facebook className="w-4 h-4 mr-2 text-blue-400" />
-                    <span>Facebook</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={shareToTwitter}
-                    className="text-white hover:bg-white/10"
-                  >
-                    <Twitter className="w-4 h-4 mr-2 text-sky-400" />
-                    <span>Twitter / X</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-white/10" />
-                  <DropdownMenuItem
-                    onClick={copyToClipboard}
-                    className="text-white hover:bg-white/10"
-                  >
-                    <LinkIcon className="w-4 h-4 mr-2" />
-                    <span>Copiar link</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <Button
-                variant="outline"
-                onClick={handleBookmark}
-                className="bg-white/5 backdrop-blur border-white/20 text-white hover:bg-white/10 hover:border-white/30"
-              >
-                <BookmarkPlus className="w-4 h-4 mr-2" />
-                Salvar
-              </Button>
-            </motion.div>
-          </div>
-        </div>
       </div>
 
       {/* Content Section */}

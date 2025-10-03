@@ -136,6 +136,7 @@ const ROUTE_SECURITY_MATRIX: RouteSecurityMatrix = {
 
     // Public Content APIs
     "/api/posts", // GET é público, POST requer autenticação
+    "/api/posts/*", // Wildcard para acessar posts individuais
     "/api/posts/public",
     "/api/categories", // GET é público, POST requer autenticação
     "/api/categories/public",
@@ -250,6 +251,7 @@ const ROUTE_SECURITY_MATRIX: RouteSecurityMatrix = {
   publicContent: [
     "/",
     "/blog",
+    "/blog/*",
     "/blog/[slug]",
     "/blog/categoria/[category]",
     "/blog/tag/[tag]",
