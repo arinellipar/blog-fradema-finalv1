@@ -361,14 +361,8 @@ export default function BlogPostPage() {
           </motion.div>
         )}
 
-        {/* Content Over Image ou abaixo do header (se não houver imagem) */}
-        <div
-          className={
-            post.mainImage
-              ? "absolute bottom-0 left-0 right-0 pb-12"
-              : "relative pt-12 pb-12 bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950"
-          }
-        >
+        {/* Content Over Image */}
+        <div className="absolute bottom-0 left-0 right-0 pb-12">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Categorias */}
             {post.categories.length > 0 && (
