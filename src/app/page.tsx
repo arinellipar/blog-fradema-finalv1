@@ -311,7 +311,7 @@ function HeroSection() {
             >
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-xl hover:shadow-2xl transition-all"
+                className="relative bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-xl shadow-blue-500/50 hover:shadow-2xl hover:shadow-blue-600/60 transition-all animate-pulse"
                 asChild
               >
                 <Link href="/consultoria-gratuita">
@@ -537,7 +537,7 @@ function AboutSection() {
 
             <Button
               size="lg"
-              className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white"
+              className="bg-gradient-to-r from-blue-600 to-green-500 hover:from-blue-700 hover:to-green-600 text-white shadow-xl shadow-blue-500/50 hover:shadow-2xl hover:shadow-blue-600/60 transition-all"
               asChild
             >
               <Link href="/consultoria-gratuita">

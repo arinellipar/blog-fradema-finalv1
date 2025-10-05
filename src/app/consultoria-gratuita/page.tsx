@@ -189,7 +189,7 @@ export default function ConsultoriaGratuitaPage() {
               <div className="text-center">
                 <Button
                   type="submit"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-semibold text-lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 rounded-lg font-semibold text-lg shadow-xl shadow-blue-500/50 hover:shadow-2xl hover:shadow-blue-600/60 transition-all"
                 >
                   Agendar Consultoria Gratuita
                 </Button>
