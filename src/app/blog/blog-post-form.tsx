@@ -277,7 +277,7 @@ export function BlogPostForm() {
       <CardHeader className="border-b bg-gradient-to-r from-blue-50 to-indigo-50">
         <CardTitle className="flex items-center gap-2 text-2xl">
           <Sparkles className="h-6 w-6 text-blue-600" />
-          Nova Matéria
+          Nova Matéria.
         </CardTitle>
       </CardHeader>
       <CardContent className="p-6">
