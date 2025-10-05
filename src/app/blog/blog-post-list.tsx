@@ -907,15 +907,15 @@ export function BlogPostList() {
                   {/* Shine Effect */}
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
 
-                  <Card className="relative h-full bg-transparent border-0 shadow-none overflow-hidden">
+                  <Card className="relative h-full bg-transparent border-0 shadow-none overflow-hidden flex flex-col">
                     {post.mainImage && (
-                      <div className="relative h-48 overflow-hidden">
+                      <div className="relative h-56 overflow-hidden flex-shrink-0">
                         <img
                           src={post.mainImage}
                           alt={post.title}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
-                        <div className="absolute top-4 left-4 flex gap-2">
+                        <div className="absolute top-4 left-4 flex gap-2 flex-wrap max-w-[calc(100%-2rem)]">
                           <Badge className={getCategoryColor(post.category)}>
                             {post.category}
                           </Badge>
@@ -929,9 +929,9 @@ export function BlogPostList() {
                       </div>
                     )}
 
-                    <CardContent className="p-6">
+                    <CardContent className="p-8 flex-1 flex flex-col">
                       {!post.mainImage && (
-                        <div className="flex gap-2 mb-3">
+                        <div className="flex gap-2 mb-4 flex-wrap">
                           <Badge className={getCategoryColor(post.category)}>
                             {post.category}
                           </Badge>
@@ -944,15 +944,15 @@ export function BlogPostList() {
                         </div>
                       )}
 
-                      <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 line-clamp-4 group-hover:text-blue-600 transition-colors min-h-[6rem] leading-relaxed">
                         {post.title}
                       </h3>
 
-                      <p className="text-gray-600 mb-4 line-clamp-3">
+                      <p className="text-gray-600 mb-6 line-clamp-3 flex-1">
                         {post.description}
                       </p>
 
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mt-auto">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
                             <AvatarImage src={post.authorAvatar} />
