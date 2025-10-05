@@ -286,7 +286,7 @@ export function BlogPostForm() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="title" className="text-base font-semibold">
-                Título da Matéria
+                Título da Matéria.
               </Label>
               <span className="text-xs text-gray-500">
                 {charCount.title}/120 caracteres
