@@ -27,6 +27,10 @@ import {
   CheckCircle,
   Hash,
   Sparkles,
+  Bold,
+  Type,
+  Italic,
+  Underline,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { CONFIG } from "@/lib/config";
@@ -96,6 +100,74 @@ export function BlogPostForm() {
     description: 0,
     content: 0,
   });
+  const contentTextareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // Funções de formatação de texto
+  const applyFormatting = (format: string) => {
+    const textarea = contentTextareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = formData.content.substring(start, end);
+    const beforeText = formData.content.substring(0, start);
+    const afterText = formData.content.substring(end);
+
+    let formattedText = "";
+    let cursorOffset = 0;
+
+    switch (format) {
+      case "bold":
+        formattedText = `**${selectedText || "texto em negrito"}**`;
+        cursorOffset = selectedText ? 2 : 2;
+        break;
+      case "italic":
+        formattedText = `*${selectedText || "texto em itálico"}*`;
+        cursorOffset = selectedText ? 1 : 1;
+        break;
+      case "underline":
+        formattedText = `<u>${selectedText || "texto sublinhado"}</u>`;
+        cursorOffset = selectedText ? 3 : 3;
+        break;
+      default:
+        return;
+    }
+
+    const newContent = beforeText + formattedText + afterText;
+    handleInputChange("content", newContent);
+
+    // Reposicionar cursor
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = start + cursorOffset;
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
+
+  // Aplicar tamanho de fonte
+  const applyFontSize = (size: string) => {
+    const textarea = contentTextareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = formData.content.substring(start, end);
+    const beforeText = formData.content.substring(0, start);
+    const afterText = formData.content.substring(end);
+
+    const formattedText = `<span style="font-size: ${size}px;">${
+      selectedText || `texto tamanho ${size}`
+    }</span>`;
+    const newContent = beforeText + formattedText + afterText;
+    handleInputChange("content", newContent);
+
+    // Reposicionar cursor
+    setTimeout(() => {
+      textarea.focus();
+      const newPosition = start + formattedText.length;
+      textarea.setSelectionRange(newPosition, newPosition);
+    }, 0);
+  };
 
   // Carregar categorias disponíveis (apenas uma vez)
   useEffect(() => {
@@ -325,16 +397,97 @@ export function BlogPostForm() {
           </div>
 
           {/* Conteúdo */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="content" className="text-base font-semibold">
-                Conteúdo do Artigo
-              </Label>
-              <span className="text-xs text-gray-500">
-                {charCount.content} caracteres
-              </span>
+          <div className="space-y-3">
+            {/* Cabeçalho com Título e Ferramentas na mesma linha */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border-2 border-blue-200 shadow-sm">
+              <div className="flex items-center gap-3">
+                <Label
+                  htmlFor="content"
+                  className="text-base font-semibold whitespace-nowrap"
+                >
+                  Conteúdo do Artigo *
+                </Label>
+                <span className="text-xs text-gray-500">
+                  {charCount.content} caracteres
+                </span>
+              </div>
+
+              {/* Ferramentas de Formatação à direita - BOTÕES VISÍVEIS */}
+              <div className="flex flex-wrap items-center gap-2 bg-white rounded-md px-2">
+                {/* Botões de Formatação - NEGRITO, ITÁLICO, SUBLINHADO */}
+                <div className="flex items-center gap-1 pr-2 border-r-2 border-blue-400">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyFormatting("bold")}
+                    className="h-9 w-9 p-0 bg-white border-2 border-gray-300 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 font-bold text-gray-700"
+                    title="Negrito (Bold)"
+                  >
+                    <Bold className="h-5 w-5 font-extrabold" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyFormatting("italic")}
+                    className="h-9 w-9 p-0 bg-white border-2 border-gray-300 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700"
+                    title="Itálico (Italic)"
+                  >
+                    <Italic className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => applyFormatting("underline")}
+                    className="h-9 w-9 p-0 bg-white border-2 border-gray-300 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700"
+                    title="Sublinhado (Underline)"
+                  >
+                    <Underline className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                {/* Seletor de Tamanho - DROPDOWN */}
+                <div className="flex items-center gap-2 pl-2">
+                  <Type className="h-5 w-5 text-blue-600 font-bold" />
+                  <Select onValueChange={(value) => applyFontSize(value)}>
+                    <SelectTrigger className="h-9 w-[130px] bg-white border-2 border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-sm font-semibold">
+                      <SelectValue placeholder="📏 Tamanho" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectItem value="12" className="text-xs">
+                        12px
+                      </SelectItem>
+                      <SelectItem value="14" className="text-sm">
+                        14px
+                      </SelectItem>
+                      <SelectItem value="16" className="text-base">
+                        16px
+                      </SelectItem>
+                      <SelectItem value="18" className="text-lg">
+                        18px
+                      </SelectItem>
+                      <SelectItem value="20" className="text-xl">
+                        20px
+                      </SelectItem>
+                      <SelectItem value="24" className="text-2xl">
+                        24px
+                      </SelectItem>
+                      <SelectItem value="28" className="text-3xl">
+                        28px
+                      </SelectItem>
+                      <SelectItem value="32" className="text-4xl">
+                        32px
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </div>
+
             <Textarea
+              ref={contentTextareaRef}
               id="content"
               placeholder="Escreva o conteúdo completo do seu artigo..."
               value={formData.content}

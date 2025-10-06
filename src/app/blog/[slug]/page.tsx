@@ -44,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDate, ROUTES } from "@/lib/utils";
 import { Comments } from "@/components/blog/comments";
 import { UserRole } from "@/types/auth";
+import { RichTextViewer } from "@/components/ui/rich-text-viewer";
 
 interface Post {
   id: string;
@@ -751,19 +752,12 @@ export default function BlogPostPage() {
       >
         {/* Content Card with Light Background */}
         <div className="bg-white rounded-3xl border border-blue-200/20 p-8 md:p-12 shadow-2xl shadow-blue-500/10">
-          <div
-            className="text-slate-700 text-lg"
-            style={{
-              whiteSpace: "pre-line",
-              fontFamily: "inherit",
-              lineHeight: "1.75",
-            }}
-            dangerouslySetInnerHTML={{
-              __html:
-                typeof post.content === "string"
-                  ? post.content
-                  : String(post.content || ""),
-            }}
+          <RichTextViewer
+            content={
+              typeof post.content === "string"
+                ? post.content
+                : String(post.content || "")
+            }
           />
 
           {/* Tags Section */}

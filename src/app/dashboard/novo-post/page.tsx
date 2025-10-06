@@ -28,7 +28,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +44,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { formatDate, ROUTES } from "@/lib/utils";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 
 // Interface para categoria
 interface Category {
@@ -200,6 +200,8 @@ export default function NovoPostPage() {
     register,
     handleSubmit,
     watch,
+    setValue,
+    getValues,
     formState: { errors, isValid },
   } = form;
 
@@ -889,21 +891,24 @@ export default function NovoPostPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="mb-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
-                    💡 <strong>Dica:</strong> Cole seu texto do Word
-                    diretamente. A formatação (parágrafos, listas) será
-                    preservada automaticamente.
+                  <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg text-sm">
+                    <p className="text-blue-800 mb-2">
+                      ✨ <strong>Editor Rico WYSIWYG</strong> - Use a barra de
+                      ferramentas para formatar seu texto visualmente. O que
+                      você vê é o que será publicado!
+                    </p>
+                    <p className="text-blue-600 text-xs">
+                      💡 Cole texto do Word diretamente - a formatação será
+                      preservada
+                    </p>
                   </div>
-                  <Textarea
-                    {...register("content")}
+
+                  <RichTextEditor
+                    value={watchedContent || ""}
+                    onChange={(value) =>
+                      setValue("content", value, { shouldValidate: true })
+                    }
                     placeholder="Escreva o conteúdo do seu artigo aqui..."
-                    rows={20}
-                    className="resize-y min-h-[400px]"
-                    style={{
-                      whiteSpace: "pre-wrap",
-                      fontFamily: "inherit",
-                      lineHeight: "1.75",
-                    }}
                   />
                   {errors.content && (
                     <p className="mt-2 text-sm text-red-600">
