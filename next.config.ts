@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Otimizações de performance
+  reactStrictMode: true,
+  poweredByHeader: false,
+  productionBrowserSourceMaps: false,
+  compress: true,
+
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -11,7 +17,15 @@ const nextConfig: NextConfig = {
     devtoolSegmentExplorer: true,
     globalNotFound: true,
     // Otimizações de performance
-    optimizePackageImports: ["lucide-react", "framer-motion"],
+    optimizePackageImports: [
+      "lucide-react",
+      "framer-motion",
+      "@radix-ui/react-icons",
+    ],
+    // Tracing otimizado para builds menores
+    outputFileTracingIncludes: {
+      "/api/**/*": ["./node_modules/**/*.wasm", "./node_modules/**/*.node"],
+    },
   },
 
   // Turbopack configuration (moved from experimental)
@@ -48,16 +62,13 @@ const nextConfig: NextConfig = {
     // Otimizações de imagem
     formats: ["image/webp", "image/avif"],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 dias
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     dangerouslyAllowSVG: true,
     contentDispositionType: "attachment",
     contentSecurityPolicy:
       "default-src 'self' https://res.cloudinary.com; script-src 'none'; sandbox;",
-  },
-
-  // Compressão e otimizações
-  compress: true,
-
-  // Configurações de build (swcMinify is deprecated in Next.js 15)
+  }
 
   // Otimizações de bundle
   webpack: (config, { dev, isServer }) => {
@@ -93,7 +104,7 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Headers de segurança para uploads
+  // Headers de segurança e performance
   async headers() {
     return [
       {
@@ -127,6 +138,25 @@ const nextConfig: NextConfig = {
           {
             key: "Access-Control-Allow-Headers",
             value: "Content-Type",
+          },
+        ],
+      },
+      // Cache para assets estáticos
+      {
+        source: "/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
