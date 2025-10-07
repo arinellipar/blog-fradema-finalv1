@@ -43,6 +43,7 @@ import {
 } from "lucide-react";
 
 import { motion, AnimatePresence } from "framer-motion";
+import page from "../page";
 
 interface BlogPost {
   id: string;
@@ -945,21 +946,18 @@ export function BlogPostList() {
                       )}
 
                       <h3
-                        className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors leading-[1.6] overflow-hidden"
-                        style={{ maxHeight: "9.6rem" }}
+                        className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors leading-[1.6]"
+                        style={{
+                          display: "-webkit-box",
+                          WebkitLineClamp: 4,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxHeight: "9.6rem",
+                          overflowWrap: "break-word",
+                        }}
                       >
-                        <span
-                          style={{
-                            display: "-webkit-box",
-                            WebkitLineClamp: 4,
-                            WebkitBoxOrient: "vertical",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            whiteSpace: "normal",
-                          }}
-                        >
-                          {post.title}
-                        </span>
+                        {post.title}
                       </h3>
 
                       <p className="text-gray-600 mb-6 line-clamp-3 flex-1">
