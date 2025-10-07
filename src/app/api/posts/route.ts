@@ -160,20 +160,38 @@ export async function POST(request: NextRequest) {
     // Verificar se o slug já existe e gerar um único
     let uniqueSlug = baseSlug;
     let counter = 1;
+    let attempts = 0;
+    const maxAttempts = 10;
 
-    while (true) {
+    while (attempts < maxAttempts) {
+      attempts++;
+
       const existingPost = await prisma.post.findUnique({
         where: { slug: uniqueSlug },
       });
 
       if (!existingPost) {
+        console.log(
+          `✅ Slug disponível encontrado após ${attempts} tentativa(s): ${uniqueSlug}`
+        );
         break; // Slug está disponível
       }
 
-      // Slug já existe, adicionar contador
-      uniqueSlug = `${baseSlug}-${counter}`;
+      // Slug já existe, adicionar contador + timestamp para garantir unicidade
+      const timestamp = Date.now();
+      uniqueSlug = `${baseSlug}-${timestamp}-${counter}`;
       counter++;
-      console.log(`⚠️ Slug já existe, tentando: ${uniqueSlug}`);
+      console.log(
+        `⚠️ Slug já existe, tentativa ${attempts}/${maxAttempts}: ${uniqueSlug}`
+      );
+    }
+
+    if (attempts >= maxAttempts) {
+      // Fallback: usar timestamp único
+      uniqueSlug = `${baseSlug}-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(7)}`;
+      console.log(`🔄 Usando slug com timestamp único: ${uniqueSlug}`);
     }
 
     console.log("✅ Slug final único:", uniqueSlug);
