@@ -43,6 +43,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    console.log("🔍 Buscando todos os posts para admin...");
+
     const posts = await db.post.findMany({
       include: {
         author: {
@@ -71,10 +73,14 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [{ order: "asc" }, { createdAt: "desc" }],
     });
+
+    console.log(`✅ Encontrados ${posts.length} posts no banco de dados`);
+    console.log(
+      "Posts IDs:",
+      posts.map((p) => ({ id: p.id, title: p.title, published: p.published }))
+    );
 
     // Transformar dados para o formato esperado
     const formattedPosts = posts.map((post) => ({
@@ -89,6 +95,7 @@ export async function GET(request: NextRequest) {
       updatedAt: post.updatedAt,
       readingTime: post.readingTime,
       wordCount: post.wordCount,
+      order: post.order,
       author: post.author,
       categories: post.categories.map((pc) => pc.category),
       tags: post.tags.map((pt) => pt.tag),
@@ -141,60 +148,23 @@ export async function GET(request: NextRequest) {
 
 // DELETE - Deletar post (apenas admins)
 export async function DELETE(request: NextRequest) {
+  const authResult = await verifyAdmin(request);
+
+  if (authResult.error) {
+    return NextResponse.json(
+      { error: { message: authResult.error } },
+      { status: authResult.status }
+    );
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const postId = searchParams.get("id");
 
     if (!postId) {
       return NextResponse.json(
-        {
-          error: {
-            code: AuthErrorCode.VALIDATION_ERROR,
-            message: "ID do post é obrigatório",
-          },
-        },
+        { error: { message: "ID do post é obrigatório" } },
         { status: 400 }
-      );
-    }
-
-    // Verificar autenticação
-    const accessToken = extractTokenFromCookie(request);
-    if (!accessToken) {
-      return NextResponse.json(
-        {
-          error: {
-            code: AuthErrorCode.TOKEN_INVALID,
-            message: "Token de acesso não encontrado",
-          },
-        },
-        { status: 401 }
-      );
-    }
-
-    const payload = await verifyToken(accessToken);
-    if (!payload) {
-      return NextResponse.json(
-        {
-          error: {
-            code: AuthErrorCode.TOKEN_INVALID,
-            message: "Token de acesso inválido",
-          },
-        },
-        { status: 401 }
-      );
-    }
-
-    // Verificar se é admin
-    if (payload.role !== "ADMIN") {
-      return NextResponse.json(
-        {
-          error: {
-            code: AuthErrorCode.UNKNOWN_ERROR,
-            message:
-              "Acesso negado. Apenas administradores podem deletar posts.",
-          },
-        },
-        { status: 403 }
       );
     }
 
@@ -205,12 +175,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!post) {
       return NextResponse.json(
-        {
-          error: {
-            code: AuthErrorCode.UNKNOWN_ERROR,
-            message: "Post não encontrado",
-          },
-        },
+        { error: { message: "Post não encontrado" } },
         { status: 404 }
       );
     }
@@ -220,18 +185,15 @@ export async function DELETE(request: NextRequest) {
       where: { id: postId },
     });
 
+    console.log(`✅ Post deletado: ${postId}`);
+
     return NextResponse.json({
       message: "Post deletado com sucesso",
     });
   } catch (error) {
-    console.error("Erro ao deletar post:", error);
+    console.error("❌ Erro ao deletar post:", error);
     return NextResponse.json(
-      {
-        error: {
-          code: AuthErrorCode.UNKNOWN_ERROR,
-          message: "Erro interno do servidor",
-        },
-      },
+      { error: { message: "Erro interno do servidor" } },
       { status: 500 }
     );
   }

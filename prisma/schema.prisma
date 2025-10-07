@@ -117,6 +117,7 @@ model Post {
   metaDescription String?   @map("meta_description")
   readingTime     Int?      @map("reading_time")
   wordCount       Int?      @map("word_count")
+  order           Int       @default(0)
   publishedAt     DateTime? @map("published_at")
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
@@ -130,6 +131,7 @@ model Post {
   @@index([slug])
   @@index([published])
   @@index([authorId])
+  @@index([order])
   @@map("posts")
 }
 

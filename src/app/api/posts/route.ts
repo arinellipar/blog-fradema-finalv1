@@ -73,9 +73,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: {
-        publishedAt: "desc",
-      },
+      orderBy: [{ order: "asc" }, { publishedAt: "desc" }],
       take: 50, // Limitar para os 50 posts mais recentes
     });
 

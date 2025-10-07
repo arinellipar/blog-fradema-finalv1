@@ -29,6 +29,8 @@ import {
   Image as ImageIcon,
   X,
   Loader2,
+  GripVertical,
+  ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,6 +102,7 @@ interface Post {
   updatedAt: Date;
   readingTime?: number;
   wordCount?: number;
+  order: number;
   author: {
     id: string;
     name: string;
@@ -196,6 +199,10 @@ export function PostsManagement({
   const [uploadingImage, setUploadingImage] = React.useState(false);
   const [imagePreview, setImagePreview] = React.useState<string>("");
 
+  // Estados para drag-and-drop
+  const [draggedPost, setDraggedPost] = React.useState<Post | null>(null);
+  const [reordering, setReordering] = React.useState(false);
+
   // Carregar posts
   const loadPosts = React.useCallback(async () => {
     setIsLoading(true);
@@ -282,6 +289,85 @@ export function PostsManagement({
     }
 
     setDialogOpen(true);
+  };
+
+  // Funções de drag-and-drop para reordenar posts
+  const handleDragStart = (e: React.DragEvent, post: Post) => {
+    setDraggedPost(post);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetPost: Post) => {
+    e.preventDefault();
+
+    if (!draggedPost || draggedPost.id === targetPost.id) {
+      setDraggedPost(null);
+      return;
+    }
+
+    setReordering(true);
+
+    // Reordenar posts localmente
+    const newPosts = [...posts];
+    const draggedIndex = newPosts.findIndex((p) => p.id === draggedPost.id);
+    const targetIndex = newPosts.findIndex((p) => p.id === targetPost.id);
+
+    // Remover post arrastado e inserir na nova posição
+    const [removed] = newPosts.splice(draggedIndex, 1);
+    newPosts.splice(targetIndex, 0, removed);
+
+    // Atualizar ordem de todos os posts
+    const postOrders = newPosts.map((post, index) => ({
+      id: post.id,
+      order: index,
+    }));
+
+    // Atualizar estado local imediatamente para feedback visual
+    const updatedPosts = newPosts.map((post, index) => ({
+      ...post,
+      order: index,
+    }));
+    setPosts(updatedPosts);
+
+    try {
+      // Enviar para o servidor
+      const response = await fetch("/api/admin/posts/reorder", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postOrders }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao reordenar posts");
+      }
+
+      toast({
+        title: "Sucesso",
+        description: "Ordem dos posts atualizada",
+        variant: "default",
+      });
+    } catch (error: any) {
+      // Reverter em caso de erro
+      await loadPosts();
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a ordem dos posts",
+        variant: "destructive",
+      });
+    } finally {
+      setDraggedPost(null);
+      setReordering(false);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedPost(null);
   };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -695,6 +781,9 @@ export function PostsManagement({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8">
+                      <ArrowUpDown className="w-4 h-4 text-gray-500" />
+                    </TableHead>
                     <TableHead className="w-12">Img</TableHead>
                     <TableHead>Post</TableHead>
                     <TableHead>Autor</TableHead>
@@ -707,7 +796,22 @@ export function PostsManagement({
                 </TableHeader>
                 <TableBody>
                   {filteredPosts.map((post) => (
-                    <TableRow key={post.id}>
+                    <TableRow
+                      key={post.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, post)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, post)}
+                      onDragEnd={handleDragEnd}
+                      className={`cursor-move transition-opacity ${
+                        draggedPost?.id === post.id ? "opacity-50" : ""
+                      } ${reordering ? "pointer-events-none" : ""}`}
+                    >
+                      <TableCell className="text-center">
+                        <div className="flex items-center justify-center">
+                          <GripVertical className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                        </div>
+                      </TableCell>
                       <TableCell>
                         {post.mainImage ? (
                           <div className="w-8 h-8 rounded overflow-hidden">
