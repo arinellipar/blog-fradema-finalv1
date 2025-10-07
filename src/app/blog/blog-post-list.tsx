@@ -951,8 +951,8 @@ export function BlogPostList() {
                           WebkitLineClamp: 4,
                           WebkitBoxOrient: "vertical",
                           overflow: "hidden",
-                          wordBreak: "normal",
-                          overflowWrap: "break-word",
+                          wordBreak: "keep-all",
+                          overflowWrap: "normal",
                           hyphens: "none",
                         }}
                       >
