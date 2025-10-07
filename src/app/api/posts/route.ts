@@ -98,38 +98,12 @@ export async function GET(request: NextRequest) {
 const processContentForStorage = (content: string) => {
   if (!content) return "";
 
-  // Se já tem tags HTML estruturadas, retornar sem processar
-  if (
-    content.includes("</p>") ||
-    content.includes("<ul>") ||
-    content.includes("<ol>")
-  ) {
-    return content;
-  }
-
-  console.log("📝 Processando conteúdo - modo preservação total");
+  console.log("📝 Processando conteúdo do editor rico");
   console.log("Tamanho original:", content.length);
+  console.log("Primeiros 200 chars:", content.substring(0, 200));
 
-  // Normalizar quebras de linha (Windows/Mac para Unix)
-  const normalizedContent = content
-    .replace(/\r\n/g, "\n") // Windows
-    .replace(/\r/g, "\n"); // Mac antigo
-
-  // Preservar linhas vazias convertendo-as em &nbsp; para não colapsar
-  const processedContent = normalizedContent
-    .split("\n")
-    .map((line) => line || "&nbsp;") // Linhas vazias viram &nbsp;
-    .join("\n");
-
-  // Envolver em div com white-space: pre-line para preservar quebras de linha
-  const result = `<div style="white-space: pre-line; line-height: 1.75;">${processedContent}</div>`;
-
-  console.log(
-    "✅ Conteúdo preservado (primeiros 300 chars):",
-    result.substring(0, 300)
-  );
-
-  return result;
+  // O Quill já gera HTML formatado, apenas retornar diretamente
+  return content;
 };
 
 // POST /api/posts - Criar novo post
@@ -263,11 +237,24 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log("✅ Post criado com sucesso:", post.id);
+
+    // Limpar cache após criar post
+    postsCache = null;
+
     return NextResponse.json(post, { status: 201 });
   } catch (error) {
-    console.error("Error creating post:", error);
+    console.error("❌ Error creating post:", error);
+    console.error("❌ Error details:", JSON.stringify(error, null, 2));
+
+    // Retornar mensagem de erro mais detalhada
+    const errorMessage =
+      error instanceof Error ? error.message : "Erro interno do servidor";
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      {
+        error: errorMessage,
+        details: error instanceof Error ? error.stack : undefined,
+      },
       { status: 500 }
     );
   }
