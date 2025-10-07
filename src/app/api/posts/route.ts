@@ -145,23 +145,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Criar slug a partir do título
-    const slug = title
+    const baseSlug = title
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9\s-]/g, "")
       .trim()
-      .replace(/\s+/g, "-");
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-") // Remove múltiplos hífens seguidos
+      .replace(/^-|-$/g, ""); // Remove hífens no início e fim
 
-    // Verificar se o slug já existe
-    const existingPost = await prisma.post.findFirst({
-      where: { slug },
-    });
+    console.log("📝 Base slug gerado:", baseSlug);
 
-    let uniqueSlug = slug;
-    if (existingPost) {
-      uniqueSlug = `${slug}-${Date.now()}`;
+    // Verificar se o slug já existe e gerar um único
+    let uniqueSlug = baseSlug;
+    let counter = 1;
+
+    while (true) {
+      const existingPost = await prisma.post.findUnique({
+        where: { slug: uniqueSlug },
+      });
+
+      if (!existingPost) {
+        break; // Slug está disponível
+      }
+
+      // Slug já existe, adicionar contador
+      uniqueSlug = `${baseSlug}-${counter}`;
+      counter++;
+      console.log(`⚠️ Slug já existe, tentando: ${uniqueSlug}`);
     }
+
+    console.log("✅ Slug final único:", uniqueSlug);
 
     console.log("==============================================");
     console.log("🔵 NOVO POST - Conteúdo ANTES do processamento:");
