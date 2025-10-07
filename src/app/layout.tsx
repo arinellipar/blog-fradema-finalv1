@@ -65,6 +65,8 @@ export default function RootLayout({
     >
       <head>
         {/* Meta tags e preloads */}
+        <meta name="robots" content="noai, noimageai" />
+        <meta name="googlebot" content="nosnippet" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
