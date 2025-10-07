@@ -945,18 +945,21 @@ export function BlogPostList() {
                       )}
 
                       <h3
-                        className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors min-h-[6rem] leading-relaxed"
-                        style={{
-                          display: "-webkit-box",
-                          WebkitLineClamp: 4,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                          wordBreak: "keep-all",
-                          overflowWrap: "normal",
-                          hyphens: "none",
-                        }}
+                        className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors leading-[1.6] overflow-hidden"
+                        style={{ maxHeight: "9.6rem" }}
                       >
-                        {post.title}
+                        <span
+                          style={{
+                            display: "-webkit-box",
+                            WebkitLineClamp: 4,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          {post.title}
+                        </span>
                       </h3>
 
                       <p className="text-gray-600 mb-6 line-clamp-3 flex-1">
