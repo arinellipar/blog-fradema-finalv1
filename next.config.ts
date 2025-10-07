@@ -22,10 +22,6 @@ const nextConfig: NextConfig = {
       "framer-motion",
       "@radix-ui/react-icons",
     ],
-    // Tracing otimizado para builds menores
-    outputFileTracingIncludes: {
-      "/api/**/*": ["./node_modules/**/*.wasm", "./node_modules/**/*.node"],
-    },
   },
 
   // Turbopack configuration (moved from experimental)
@@ -68,7 +64,7 @@ const nextConfig: NextConfig = {
     contentDispositionType: "attachment",
     contentSecurityPolicy:
       "default-src 'self' https://res.cloudinary.com; script-src 'none'; sandbox;",
-  }
+  },
 
   // Otimizações de bundle
   webpack: (config, { dev, isServer }) => {
