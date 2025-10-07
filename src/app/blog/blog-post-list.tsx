@@ -77,16 +77,20 @@ const POSTS_PER_PAGE = 6;
 
 // Função para truncar texto sem cortar palavras
 const truncateText = (text: string, maxLength: number): string => {
+  if (!text) return "";
   if (text.length <= maxLength) return text;
 
   // Encontra o último espaço antes do limite
   const truncated = text.substring(0, maxLength);
   const lastSpace = truncated.lastIndexOf(" ");
 
-  // Se encontrou um espaço, corta ali; senão, corta no limite
-  return lastSpace > 0
-    ? truncated.substring(0, lastSpace) + "..."
-    : truncated + "...";
+  // Se encontrou um espaço (e não está muito no início), corta ali
+  if (lastSpace > maxLength * 0.6) {
+    return truncated.substring(0, lastSpace).trim() + "...";
+  }
+
+  // Caso contrário, retorna o texto até o limite sem cortar palavras
+  return truncated.trim() + "...";
 };
 
 // Mapeamento de ícones e cores para categorias (constante)
@@ -960,11 +964,11 @@ export function BlogPostList() {
                       )}
 
                       <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors leading-relaxed">
-                        {truncateText(post.title, 100)}
+                        {truncateText(post.title, 120)}
                       </h3>
 
                       <p className="text-gray-600 mb-6 flex-1 leading-relaxed">
-                        {truncateText(post.description, 150)}
+                        {truncateText(post.description, 140)}
                       </p>
 
                       <div className="flex items-center justify-between mt-auto">
