@@ -944,7 +944,7 @@ export function BlogPostList() {
                         </div>
                       )}
 
-                      <h3 className="text-xl font-bold text-gray-900 mb-4 line-clamp-4 group-hover:text-blue-600 transition-colors min-h-[6rem] leading-relaxed">
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 line-clamp-4 group-hover:text-blue-600 transition-colors min-h-[6rem] leading-relaxed break-words hyphens-none">
                         {post.title}
                       </h3>
 
