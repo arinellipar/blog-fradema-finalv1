@@ -109,11 +109,30 @@ export async function POST(request: NextRequest) {
   console.log("\n\n🚀🚀🚀 API POST /api/posts CHAMADA! 🚀🚀🚀\n");
 
   try {
+    // Verificar se há cookie de autenticação
+    const cookies = request.cookies.getAll();
+    console.log("🍪 Cookies recebidos:", cookies.map((c) => c.name).join(", "));
+
+    const accessToken = request.cookies.get("access_token");
+    console.log("🔑 Access token presente:", accessToken ? "Sim" : "Não");
+
     // Verificar autenticação
     const authResult = await getAuthGuard(request);
+    console.log("🔐 Resultado da autenticação:", {
+      isAuthenticated: authResult.isAuthenticated,
+      user: authResult.user?.name,
+      error: authResult.error,
+    });
+
     if (!authResult.isAuthenticated || !authResult.user) {
-      console.log("❌ Usuário não autenticado");
-      return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+      console.log("❌ Usuário não autenticado:", authResult.error);
+      return NextResponse.json(
+        {
+          error: "Não autorizado. Por favor, faça login novamente.",
+          details: authResult.error,
+        },
+        { status: 401 }
+      );
     }
 
     console.log("✅ Usuário autenticado:", authResult.user.name);

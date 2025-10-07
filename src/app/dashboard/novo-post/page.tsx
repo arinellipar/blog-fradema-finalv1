@@ -168,7 +168,7 @@ const useFileUpload = () => {
 
 export default function NovoPostPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const { uploadFile, uploading, uploadProgress } = useFileUpload();
 
@@ -183,6 +183,18 @@ export default function NovoPostPage() {
   );
   const [tags, setTags] = React.useState<string[]>([]);
   const [tagInput, setTagInput] = React.useState("");
+
+  // Verificar autenticação
+  useEffect(() => {
+    if (!authLoading && !user) {
+      toast({
+        title: "Não autorizado",
+        description: "Você precisa estar logado para criar posts",
+        variant: "destructive",
+      });
+      router.push("/login");
+    }
+  }, [user, authLoading, router, toast]);
 
   const form = useForm<BlogPostFormData>({
     resolver: zodResolver(BlogPostSchema),
@@ -401,11 +413,21 @@ export default function NovoPostPage() {
 
   // Submissão do formulário
   const onSubmit = async (data: BlogPostFormData) => {
+    console.log("📝 Iniciando submit do formulário...");
+    console.log("👤 Usuário atual:", user);
+
     if (!user) {
-      toast.error("Usuário não autenticado");
+      console.error("❌ Usuário não autenticado no submit");
+      toast({
+        title: "Erro",
+        description: "Usuário não autenticado. Por favor, faça login.",
+        variant: "destructive",
+      });
+      router.push("/login");
       return;
     }
 
+    console.log("✅ Usuário autenticado:", user.name, user.email);
     setIsSubmitting(true);
 
     try {
@@ -424,7 +446,15 @@ export default function NovoPostPage() {
         createdAt: new Date().toISOString(),
       };
 
+      console.log("📦 Dados do post preparados:", {
+        title: postData.title,
+        published: postData.published,
+        categoriesCount: selectedCategories.length,
+        tagsCount: tags.length,
+      });
+
       // Enviar para API
+      console.log("🚀 Enviando POST para /api/posts...");
       const response = await fetch("/api/posts", {
         method: "POST",
         credentials: "include",
@@ -442,22 +472,49 @@ export default function NovoPostPage() {
         }),
       });
 
+      console.log(
+        "📡 Resposta recebida:",
+        response.status,
+        response.statusText
+      );
+
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Erro ao criar post");
+        console.error("❌ Erro na resposta:", errorData);
+
+        if (response.status === 401) {
+          toast({
+            title: "Sessão expirada",
+            description: "Por favor, faça login novamente",
+            variant: "destructive",
+          });
+          router.push("/login");
+          return;
+        }
+
+        throw new Error(
+          errorData.error || errorData.details || "Erro ao criar post"
+        );
       }
 
-      toast.success("Post criado com sucesso!", {
+      const result = await response.json();
+      console.log("✅ Post criado com sucesso:", result);
+
+      toast({
+        title: "Post criado com sucesso!",
         description: data.published
           ? "Seu artigo foi publicado e está visível no blog"
           : "Seu artigo foi salvo como rascunho",
+        variant: "default",
       });
 
       router.push(ROUTES.dashboard);
     } catch (error) {
-      console.error("Erro ao criar post:", error);
-      toast.error("Erro ao criar post", {
+      console.error("❌ Erro ao criar post:", error);
+      toast({
+        title: "Erro ao criar post",
         description: error instanceof Error ? error.message : "Tente novamente",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
