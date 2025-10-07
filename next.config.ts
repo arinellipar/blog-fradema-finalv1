@@ -156,6 +156,17 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Content Security Policy para permitir Cloudinary
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value:
+              "img-src 'self' data: https://res.cloudinary.com https://images.unsplash.com blob:; default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:;",
+          },
+        ],
+      },
     ];
   },
 };

@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
     let uniqueSlug = baseSlug;
     let counter = 1;
     let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 20;
 
     while (attempts < maxAttempts) {
       attempts++;
@@ -194,9 +194,8 @@ export async function POST(request: NextRequest) {
         break; // Slug está disponível
       }
 
-      // Slug já existe, adicionar contador + timestamp para garantir unicidade
-      const timestamp = Date.now();
-      uniqueSlug = `${baseSlug}-${timestamp}-${counter}`;
+      // Slug já existe, adicionar contador simples
+      uniqueSlug = `${baseSlug}-${counter}`;
       counter++;
       console.log(
         `⚠️ Slug já existe, tentativa ${attempts}/${maxAttempts}: ${uniqueSlug}`
@@ -204,11 +203,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (attempts >= maxAttempts) {
-      // Fallback: usar timestamp único
-      uniqueSlug = `${baseSlug}-${Date.now()}-${Math.random()
-        .toString(36)
-        .substring(7)}`;
-      console.log(`🔄 Usando slug com timestamp único: ${uniqueSlug}`);
+      // Fallback: usar número aleatório
+      const randomSuffix = Math.floor(Math.random() * 10000);
+      uniqueSlug = `${baseSlug}-${randomSuffix}`;
+      console.log(`🔄 Usando slug com sufixo aleatório: ${uniqueSlug}`);
     }
 
     console.log("✅ Slug final único:", uniqueSlug);
