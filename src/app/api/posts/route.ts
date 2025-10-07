@@ -195,6 +195,15 @@ export async function POST(request: NextRequest) {
     );
     console.log("==============================================");
 
+    console.log("🚀 Tentando criar post no banco de dados...");
+    console.log("📊 Dados do post:");
+    console.log("  - Título:", title);
+    console.log("  - Slug:", uniqueSlug);
+    console.log("  - Autor:", authResult.user.id);
+    console.log("  - Categorias:", categories?.length || 0);
+    console.log("  - Tags:", tags?.length || 0);
+    console.log("  - Publicado:", published);
+
     // Criar o post
     const post = await prisma.post.create({
       data: {
@@ -258,9 +267,26 @@ export async function POST(request: NextRequest) {
     postsCache = null;
 
     return NextResponse.json(post, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error creating post:", error);
-    console.error("❌ Error details:", JSON.stringify(error, null, 2));
+    console.error("❌ Error name:", error?.name);
+    console.error("❌ Error message:", error?.message);
+    console.error("❌ Error code:", error?.code);
+    console.error("❌ Error meta:", JSON.stringify(error?.meta, null, 2));
+    console.error("❌ Error stack:", error?.stack);
+
+    // Tratar erro específico de constraint única do Prisma
+    if (error?.code === "P2002") {
+      const field = error?.meta?.target?.[0] || "campo";
+      return NextResponse.json(
+        {
+          error: `Já existe um post com este ${field}. Por favor, tente novamente ou use um título diferente.`,
+          code: "DUPLICATE_ENTRY",
+          field: field,
+        },
+        { status: 409 }
+      );
+    }
 
     // Retornar mensagem de erro mais detalhada
     const errorMessage =
