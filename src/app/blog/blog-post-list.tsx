@@ -75,6 +75,20 @@ interface Comment {
 
 const POSTS_PER_PAGE = 6;
 
+// Função para truncar texto sem cortar palavras
+const truncateText = (text: string, maxLength: number): string => {
+  if (text.length <= maxLength) return text;
+
+  // Encontra o último espaço antes do limite
+  const truncated = text.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(" ");
+
+  // Se encontrou um espaço, corta ali; senão, corta no limite
+  return lastSpace > 0
+    ? truncated.substring(0, lastSpace) + "..."
+    : truncated + "...";
+};
+
 // Mapeamento de ícones e cores para categorias (constante)
 const CATEGORY_CONFIGS: Record<string, any> = {
   tributario: {
@@ -945,23 +959,12 @@ export function BlogPostList() {
                         </div>
                       )}
 
-                      <h3
-                        className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors leading-[1.6]"
-                        style={{
-                          display: "-webkit-box",
-                          WebkitLineClamp: 4,
-                          WebkitBoxOrient: "vertical",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          maxHeight: "9.6rem",
-                          overflowWrap: "break-word",
-                        }}
-                      >
-                        {post.title}
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors leading-relaxed">
+                        {truncateText(post.title, 100)}
                       </h3>
 
-                      <p className="text-gray-600 mb-6 line-clamp-3 flex-1">
-                        {post.description}
+                      <p className="text-gray-600 mb-6 flex-1 leading-relaxed">
+                        {truncateText(post.description, 150)}
                       </p>
 
                       <div className="flex items-center justify-between mt-auto">
