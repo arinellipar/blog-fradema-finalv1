@@ -175,38 +175,49 @@ export async function POST(request: NextRequest) {
     console.log("📝 Base slug gerado:", baseSlug);
 
     // Verificar se o slug já existe e gerar um único
+    // Primeiro, buscar todos os slugs que começam com o baseSlug
+    const existingSlugs = await prisma.post.findMany({
+      where: {
+        slug: {
+          startsWith: baseSlug,
+        },
+      },
+      select: {
+        slug: true,
+      },
+    });
+
+    console.log(
+      `📊 Encontrados ${existingSlugs.length} posts com slug similar:`,
+      existingSlugs.map((p) => p.slug)
+    );
+
     let uniqueSlug = baseSlug;
-    let counter = 1;
-    let attempts = 0;
-    const maxAttempts = 20;
 
-    while (attempts < maxAttempts) {
-      attempts++;
+    // Se o slug base já existe, encontrar o próximo número disponível
+    if (existingSlugs.some((p) => p.slug === baseSlug)) {
+      let counter = 1;
+      let found = false;
 
-      const existingPost = await prisma.post.findUnique({
-        where: { slug: uniqueSlug },
-      });
-
-      if (!existingPost) {
-        console.log(
-          `✅ Slug disponível encontrado após ${attempts} tentativa(s): ${uniqueSlug}`
-        );
-        break; // Slug está disponível
+      // Procurar o próximo número disponível
+      while (!found && counter < 100) {
+        const testSlug = `${baseSlug}-${counter}`;
+        if (!existingSlugs.some((p) => p.slug === testSlug)) {
+          uniqueSlug = testSlug;
+          found = true;
+          console.log(`✅ Slug disponível encontrado: ${uniqueSlug}`);
+        } else {
+          counter++;
+        }
       }
 
-      // Slug já existe, adicionar contador simples
-      uniqueSlug = `${baseSlug}-${counter}`;
-      counter++;
-      console.log(
-        `⚠️ Slug já existe, tentativa ${attempts}/${maxAttempts}: ${uniqueSlug}`
-      );
-    }
-
-    if (attempts >= maxAttempts) {
-      // Fallback: usar número aleatório
-      const randomSuffix = Math.floor(Math.random() * 10000);
-      uniqueSlug = `${baseSlug}-${randomSuffix}`;
-      console.log(`🔄 Usando slug com sufixo aleatório: ${uniqueSlug}`);
+      // Fallback: usar timestamp se não encontrou em 100 tentativas
+      if (!found) {
+        uniqueSlug = `${baseSlug}-${Date.now()}`;
+        console.log(`🔄 Usando slug com timestamp: ${uniqueSlug}`);
+      }
+    } else {
+      console.log(`✅ Slug base disponível: ${uniqueSlug}`);
     }
 
     console.log("✅ Slug final único:", uniqueSlug);
@@ -237,64 +248,99 @@ export async function POST(request: NextRequest) {
     console.log("  - Tags:", tags?.length || 0);
     console.log("  - Publicado:", published);
 
-    // Criar o post
-    const post = await prisma.post.create({
-      data: {
-        title,
-        slug: uniqueSlug,
-        content: processedContent,
-        excerpt: description || "",
-        mainImage,
-        published,
-        authorId: authResult.user.id,
-        categories: categories?.length
-          ? {
-              create: categories.map((categoryId: string) => ({
-                category: {
-                  connect: { id: categoryId },
-                },
-              })),
-            }
-          : undefined,
-        tags: tags?.length
-          ? {
-              create: tags.map((tagName: string) => ({
-                tag: {
-                  connectOrCreate: {
-                    where: { name: tagName },
-                    create: {
-                      name: tagName,
-                      slug: tagName.toLowerCase().replace(/\s+/g, "-"),
-                    },
-                  },
-                },
-              })),
-            }
-          : undefined,
-      },
-      include: {
-        author: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            avatar: true,
-          },
-        },
-        categories: {
-          include: {
-            category: true,
-          },
-        },
-        tags: {
-          include: {
-            tag: true,
-          },
-        },
-      },
-    });
+    // Criar o post com tratamento de erro de slug duplicado
+    let post;
+    let createAttempts = 0;
+    const maxCreateAttempts = 3;
 
-    console.log("✅ Post criado com sucesso:", post.id);
+    while (createAttempts < maxCreateAttempts) {
+      try {
+        post = await prisma.post.create({
+          data: {
+            title,
+            slug: uniqueSlug,
+            content: processedContent,
+            excerpt: description || "",
+            mainImage,
+            published,
+            authorId: authResult.user.id,
+            categories: categories?.length
+              ? {
+                  create: categories.map((categoryId: string) => ({
+                    category: {
+                      connect: { id: categoryId },
+                    },
+                  })),
+                }
+              : undefined,
+            tags: tags?.length
+              ? {
+                  create: tags.map((tagName: string) => ({
+                    tag: {
+                      connectOrCreate: {
+                        where: { name: tagName },
+                        create: {
+                          name: tagName,
+                          slug: tagName.toLowerCase().replace(/\s+/g, "-"),
+                        },
+                      },
+                    },
+                  })),
+                }
+              : undefined,
+          },
+          include: {
+            author: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar: true,
+              },
+            },
+            categories: {
+              include: {
+                category: true,
+              },
+            },
+            tags: {
+              include: {
+                tag: true,
+              },
+            },
+          },
+        });
+
+        console.log("✅ Post criado com sucesso:", post.id);
+        break; // Sucesso, sair do loop
+      } catch (error: any) {
+        createAttempts++;
+
+        // Verificar se é erro de slug duplicado
+        if (
+          error.code === "P2002" &&
+          error.meta?.target?.includes("slug") &&
+          createAttempts < maxCreateAttempts
+        ) {
+          // Tentar com um novo slug usando timestamp
+          const timestamp = Date.now();
+          uniqueSlug = `${baseSlug}-${timestamp}`;
+          console.log(
+            `⚠️ Slug duplicado detectado, tentando novamente com: ${uniqueSlug} (tentativa ${createAttempts}/${maxCreateAttempts})`
+          );
+          continue; // Tentar novamente
+        }
+
+        // Se não for erro de slug ou esgotou tentativas, lançar erro
+        throw error;
+      }
+    }
+
+    if (!post) {
+      throw new Error(
+        "Não foi possível criar o post após múltiplas tentativas"
+      );
+    }
 
     // Limpar cache após criar post
     postsCache = null;

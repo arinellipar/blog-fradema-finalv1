@@ -9,7 +9,7 @@ import { AuthErrorCode, UserRole, type DecodedToken } from "@/types/auth";
 
 // Configurações
 const JWT_SECRET = process.env.JWT_SECRET || "your-super-secret-jwt-key-here";
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h";
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "2h";
 
 // Log para debug
 console.log("JWT_SECRET configurado:", JWT_SECRET ? "Sim" : "Não");
@@ -62,7 +62,7 @@ export async function generateAccessToken(payload: {
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
-    .setExpirationTime("1h")
+    .setExpirationTime("2h")
     .setJti(crypto.randomUUID())
     .sign(secret);
 

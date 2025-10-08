@@ -219,6 +219,7 @@ export default function NovoPostPage() {
 
   const watchedContent = watch("content");
   const watchedTitle = watch("title");
+  const watchedSubtitle = watch("subtitle");
 
   // Calcular tempo de leitura estimado
   const readingTime = React.useMemo(() => {
@@ -669,6 +670,9 @@ export default function NovoPostPage() {
                         error={!!errors.subtitle}
                         errorMessage={errors.subtitle?.message}
                       />
+                      <div className="mt-1 text-xs text-gray-500">
+                        {watchedSubtitle?.length || 0}/200 caracteres
+                      </div>
                     </div>
                   </div>
                 </CardContent>
