@@ -45,7 +45,7 @@ NEXTAUTH_SECRET="your-nextauth-secret-here"
 
 ## Funcionalidades Disponíveis
 
-- **Upload de imagens**: Para posts do blog
+- **Upload de imagens**: Para posts do blog!
 - **Upload de arquivos**: Para comentários
 - **Autenticação**: Integração com Supabase Auth
 - **Storage**: Armazenamento de arquivos
