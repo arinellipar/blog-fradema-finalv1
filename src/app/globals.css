@@ -94,6 +94,21 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  /* Garantir que listas mantenham seus estilos nativos no editor e viewer */
+  .rich-text-editor ul,
+  .rich-text-viewer ul,
+  .ql-editor ul {
+    list-style-type: disc;
+    list-style-position: outside;
+  }
+
+  .rich-text-editor ol,
+  .rich-text-viewer ol,
+  .ql-editor ol {
+    list-style-type: decimal;
+    list-style-position: outside;
+  }
 }
 
 /* Estilos customizados para elementos específicos */
@@ -218,11 +233,68 @@
 .blog-content-spacing ol {
   margin-top: 1.5rem !important;
   margin-bottom: 1.5rem !important;
+  padding-left: 1.5rem !important;
 }
 
-.blog-content-spacing li {
+/* DESABILITAR COUNTERS DO QUILL - MÁXIMA PRIORIDADE */
+.blog-content-spacing ul,
+.blog-content-spacing ul.ql-list-bullet,
+.rich-text-viewer ul,
+.rich-text-viewer ul.ql-list-bullet {
+  list-style-type: disc !important;
+  list-style-position: outside !important;
+  counter-reset: none !important;
+}
+
+.blog-content-spacing ul li,
+.blog-content-spacing ul.ql-list-bullet li,
+.rich-text-viewer ul li,
+.rich-text-viewer ul.ql-list-bullet li {
+  counter-increment: none !important;
+}
+
+.blog-content-spacing ul li::before,
+.blog-content-spacing ul.ql-list-bullet li::before,
+.rich-text-viewer ul li::before,
+.rich-text-viewer ul.ql-list-bullet li::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* Garantir que listas numeradas usem decimal - MÁXIMA PRIORIDADE */
+.blog-content-spacing ol,
+.blog-content-spacing ol.ql-list-ordered,
+.rich-text-viewer ol,
+.rich-text-viewer ol.ql-list-ordered {
+  list-style-type: decimal !important;
+  list-style-position: outside !important;
+}
+
+/* Forçar listas com data-list="bullet" a usar disc */
+.blog-content-spacing ul li[data-list="bullet"],
+.blog-content-spacing li[data-list="bullet"],
+.blog-content-spacing ul li,
+.rich-text-viewer ul li[data-list="bullet"],
+.rich-text-viewer li[data-list="bullet"],
+.rich-text-viewer ul li {
+  list-style-type: disc !important;
+}
+
+/* Forçar listas com data-list="ordered" a usar decimal */
+.blog-content-spacing ol li[data-list="ordered"],
+.blog-content-spacing li[data-list="ordered"],
+.blog-content-spacing ol li,
+.rich-text-viewer ol li[data-list="ordered"],
+.rich-text-viewer li[data-list="ordered"],
+.rich-text-viewer ol li {
+  list-style-type: decimal !important;
+}
+
+.blog-content-spacing li,
+.rich-text-viewer li {
   margin-bottom: 0.25rem !important;
   line-height: 1.75 !important;
+  display: list-item !important;
 }
 
 /* Espaçamento entre parágrafos e listas */
@@ -333,6 +405,34 @@
 .rich-text-editor .ql-editor ol {
   margin-bottom: 1rem;
   padding-left: 1.5rem;
+}
+
+/* Garantir que listas com marcadores usem disc */
+.rich-text-editor .ql-editor ul {
+  list-style-type: disc !important;
+}
+
+/* Garantir que listas numeradas usem decimal */
+.rich-text-editor .ql-editor ol {
+  list-style-type: decimal !important;
+}
+
+/* Suporte para classes do Quill - Forçar tipos de lista */
+.rich-text-editor .ql-editor li[data-list="bullet"] {
+  list-style-type: disc !important;
+}
+
+.rich-text-editor .ql-editor li[data-list="ordered"] {
+  list-style-type: decimal !important;
+}
+
+/* Garantir que o Quill não converta UL em OL */
+.rich-text-editor .ql-editor ul li {
+  list-style-type: disc !important;
+}
+
+.rich-text-editor .ql-editor ol li {
+  list-style-type: decimal !important;
 }
 
 .rich-text-editor .ql-editor blockquote {

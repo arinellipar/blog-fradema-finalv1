@@ -86,6 +86,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useToast } from "@/hooks/use-toast";
 import { formatDate } from "@/lib/utils";
 
@@ -213,6 +214,12 @@ export function PostsManagement({
       const data = await response.json();
 
       if (response.ok) {
+        console.log("🔍 [DEBUG] Posts recebidos da API:", data.posts.length);
+        console.log("🔍 [DEBUG] Primeiro post tem content?", {
+          hasContent: !!data.posts[0]?.content,
+          contentLength: data.posts[0]?.content?.length || 0,
+        });
+
         const postsData = data.posts.map((post: any) => ({
           ...post,
           createdAt: new Date(post.createdAt),
@@ -278,6 +285,14 @@ export function PostsManagement({
     setDialogType(type);
 
     if (type === "edit") {
+      console.log("🔍 [DEBUG] Post selecionado para edição:", {
+        id: post.id,
+        title: post.title,
+        hasContent: !!post.content,
+        contentLength: post.content?.length || 0,
+        contentPreview: post.content?.substring(0, 100) || "VAZIO",
+      });
+
       setEditData({
         title: post.title,
         excerpt: post.excerpt || "",
@@ -1076,19 +1091,18 @@ export function PostsManagement({
 
                   <div className="space-y-2">
                     <Label htmlFor="content">Conteúdo</Label>
-                    <Textarea
-                      id="content"
-                      value={editData.content}
-                      onChange={(e) =>
-                        setEditData((prev) => ({
-                          ...prev,
-                          content: e.target.value,
-                        }))
-                      }
-                      placeholder="Conteúdo do artigo..."
-                      rows={10}
-                      className="min-h-[200px]"
-                    />
+                    <div className="border rounded-lg">
+                      <RichTextEditor
+                        value={editData.content || ""}
+                        onChange={(value) =>
+                          setEditData((prev) => ({
+                            ...prev,
+                            content: value,
+                          }))
+                        }
+                        placeholder="Escreva o conteúdo do artigo..."
+                      />
+                    </div>
                   </div>
 
                   {/* Upload de Imagem */}

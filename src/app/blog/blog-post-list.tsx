@@ -40,10 +40,33 @@ import {
   Flame,
   Scale,
   ShieldCheck,
+  GripVertical,
+  Save,
+  X as XIcon,
 } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 import { motion, AnimatePresence } from "framer-motion";
 import page from "../page";
+import { useAuth } from "@/contexts/auth-context";
+import { UserRole } from "@/types/auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface BlogPost {
   id: string;
@@ -57,6 +80,7 @@ interface BlogPost {
   category: string; // Primeira categoria para compatibilidade
   categories?: string[]; // Array de todas as categorias
   publishDate: string;
+  order?: number; // ordem vinda do backend (0-n)
   readingTime?: number;
   views?: number;
   commentsCount?: number;
@@ -191,8 +215,147 @@ const getCategoryConfig = (slug: string) => {
   );
 };
 
+// Componente Sortable Item para drag and drop
+interface SortablePostItemProps {
+  post: BlogPost;
+  onView: (post: BlogPost) => void;
+  formatDate: (dateString: string) => string;
+  getCategoryColor: (category: string) => string;
+  truncateText: (text: string, maxLength: number) => string;
+}
+
+function SortablePostItem({
+  post,
+  onView,
+  formatDate,
+  getCategoryColor,
+  truncateText,
+}: SortablePostItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: post.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      {/* Drag Handle */}
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute left-2 top-1/2 -translate-y-1/2 z-20 cursor-grab active:cursor-grabbing p-2 bg-blue-500 text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors"
+      >
+        <GripVertical className="w-5 h-5" />
+      </div>
+
+      {/* Post Card */}
+      <div className="ml-12 cursor-pointer" onClick={() => onView(post)}>
+        <div className="group relative h-full overflow-hidden rounded-3xl transition-all duration-500 hover:scale-[1.02] hover:-translate-y-1">
+          {/* Glassmorphism Background */}
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-2xl border-2 border-blue-400/50 shadow-2xl shadow-blue-500/20 transition-all duration-500" />
+
+          {/* Animated Glow */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/30 via-emerald-500/30 to-violet-500/30 rounded-3xl blur-xl opacity-60 transition-opacity duration-500" />
+
+          <Card className="relative h-full bg-transparent border-0 shadow-none overflow-hidden flex flex-col">
+            {post.mainImage && (
+              <div className="relative h-56 overflow-hidden flex-shrink-0">
+                <img
+                  src={post.mainImage}
+                  alt={post.title}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+                <div className="absolute top-4 left-4 flex gap-2 flex-wrap max-w-[calc(100%-2rem)]">
+                  <Badge className={getCategoryColor(post.category)}>
+                    {post.category}
+                  </Badge>
+                  {post.trending && (
+                    <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      Em alta
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <CardContent className="p-8 flex-1 flex flex-col">
+              {!post.mainImage && (
+                <div className="flex gap-2 mb-4 flex-wrap">
+                  <Badge className={getCategoryColor(post.category)}>
+                    {post.category}
+                  </Badge>
+                  {post.trending && (
+                    <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white">
+                      <TrendingUp className="w-3 h-3 mr-1" />
+                      Em alta
+                    </Badge>
+                  )}
+                </div>
+              )}
+
+              <h3 className="text-xl font-bold text-gray-900 mb-4 group-hover:text-blue-600 transition-colors leading-relaxed">
+                {truncateText(post.title, 120)}
+              </h3>
+
+              <p className="text-gray-600 mb-6 flex-1 leading-relaxed">
+                {truncateText(post.description, 140)}
+              </p>
+
+              <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={post.authorAvatar} />
+                    <AvatarFallback>{post.authorName[0]}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      {post.authorName}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(post.publishDate)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 text-sm text-gray-500">
+                  {post.readingTime && (
+                    <div className="flex items-center gap-1">
+                      <ClockIcon className="w-4 h-4" />
+                      <span>{post.readingTime}m</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <MessageCircleIcon className="w-4 h-4" />
+                    <span>{post.commentsCount || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Eye className="w-4 h-4" />
+                    <span>{post.views || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function BlogPostList() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState<"recent" | "popular" | "trending">(
@@ -209,6 +372,22 @@ export function BlogPostList() {
   // Estado para categorias dinâmicas
   const [categories, setCategories] = React.useState<any[]>([]);
   const [categoriesLoading, setCategoriesLoading] = React.useState(false);
+
+  // Estados para drag and drop (apenas para admins)
+  const [isReorderMode, setIsReorderMode] = React.useState(false);
+  const [reorderedPosts, setReorderedPosts] = React.useState<BlogPost[]>([]);
+  const [isSavingOrder, setIsSavingOrder] = React.useState(false);
+
+  // Verificar se o usuário é admin
+  const isAdmin = user?.role === UserRole.ADMIN;
+
+  // Configurar sensores para drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Função para converter posts da API (memoizada)
   const convertApiPosts = React.useCallback((apiPosts: any[]): BlogPost[] => {
@@ -231,6 +410,7 @@ export function BlogPostList() {
         category: allCategories[0] || "Geral", // Primeira categoria para compatibilidade
         categories: allCategories, // Array de todas as categorias
         publishDate: post.publishedAt || post.createdAt,
+        order: typeof post.order === "number" ? post.order : undefined,
         readingTime: post.readingTime || 5,
         views: post._count?.PostView || 0,
         commentsCount: post._count?.comments || 0,
@@ -240,14 +420,18 @@ export function BlogPostList() {
     });
   }, []);
 
-  // Buscar posts da API quando componente montar
-  React.useEffect(() => {
-    const loadPosts = async () => {
+  // Função para carregar posts (reutilizável)
+  const loadPosts = React.useCallback(
+    async (forceRefresh = false) => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await fetch("/api/posts");
+        // Se forceRefresh, limpar o cache primeiro
+        const url = forceRefresh ? "/api/posts?clearCache=true" : "/api/posts";
+        console.log(`🔄 Buscando posts de: ${url}`);
+
+        const response = await fetch(url);
 
         if (!response.ok) {
           throw new Error("Erro ao buscar posts");
@@ -255,17 +439,28 @@ export function BlogPostList() {
 
         const apiPosts = await response.json();
         const convertedPosts = convertApiPosts(apiPosts);
+        console.log(`✅ ${convertedPosts.length} posts carregados`);
+
         setPosts(convertedPosts);
+
+        // Se estava em modo de reordenação, limpar também os posts reordenados
+        if (forceRefresh) {
+          setReorderedPosts([]);
+        }
       } catch (err) {
         console.error("❌ Erro ao buscar posts:", err);
         setError(err instanceof Error ? err.message : "Erro desconhecido");
       } finally {
         setLoading(false);
       }
-    };
+    },
+    [convertApiPosts, setReorderedPosts]
+  );
 
+  // Buscar posts da API quando componente montar
+  React.useEffect(() => {
     loadPosts();
-  }, [convertApiPosts]);
+  }, [loadPosts]);
 
   // Buscar categorias da API (memoizado)
   const loadCategories = React.useCallback(async () => {
@@ -287,6 +482,149 @@ export function BlogPostList() {
   React.useEffect(() => {
     loadCategories();
   }, [loadCategories]);
+
+  // Atualizar reorderedPosts quando posts mudarem
+  React.useEffect(() => {
+    if (posts.length > 0 && reorderedPosts.length === 0) {
+      setReorderedPosts(posts);
+    }
+  }, [posts, reorderedPosts.length]);
+
+  // Função para lidar com o fim do drag
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setReorderedPosts((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  // Função para salvar a nova ordem dos posts
+  const savePostsOrder = async () => {
+    console.log("🔵 Iniciando salvamento da ordem dos posts...");
+    setIsSavingOrder(true);
+
+    try {
+      const postOrders = reorderedPosts.map((post, index) => ({
+        id: post.id,
+        order: index,
+      }));
+
+      console.log(
+        "📦 Dados a enviar:",
+        postOrders.slice(0, 3),
+        "... (total:",
+        postOrders.length,
+        ")"
+      );
+
+      console.log("🌐 Criando AbortController para timeout...");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.error("⏰ TIMEOUT! Requisição demorou mais de 30 segundos");
+        controller.abort();
+      }, 30000);
+
+      console.log(
+        "🚀 Enviando requisição fetch para /api/admin/posts/reorder..."
+      );
+      const fetchPromise = fetch("/api/admin/posts/reorder", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ postOrders }),
+        signal: controller.signal,
+      });
+
+      console.log("⏳ Aguardando resposta do servidor...");
+      const response = await fetchPromise;
+      clearTimeout(timeoutId);
+
+      console.log("✅ Resposta recebida do servidor!");
+      console.log("📡 Response status:", response.status);
+      console.log("📡 Response ok:", response.ok);
+
+      // Tentar ler a resposta como texto primeiro
+      const responseText = await response.text();
+      console.log(
+        "📡 Response text (primeiros 200 chars):",
+        responseText.substring(0, 200)
+      );
+
+      if (!response.ok) {
+        let errorData: any = {};
+        try {
+          errorData = JSON.parse(responseText);
+        } catch (e) {
+          console.error("❌ Erro ao fazer parse da resposta de erro:", e);
+        }
+        console.error("❌ Erro na resposta:", errorData);
+        throw new Error(errorData.error || "Erro ao salvar ordem dos posts");
+      }
+
+      // Tentar fazer parse do JSON
+      let result: any = {};
+      try {
+        result = JSON.parse(responseText);
+        console.log("✅ Resposta da API parseada:", result);
+      } catch (e) {
+        console.error(
+          "⚠️ Erro ao fazer parse do JSON, mas resposta foi OK:",
+          e
+        );
+        // Se não conseguir fazer parse mas a resposta foi OK, considerar sucesso
+        result = { success: true };
+      }
+
+      // Recarregar posts do servidor para garantir que temos a ordem correta
+      console.log("🔄 Recarregando posts do servidor com a nova ordem...");
+      await loadPosts(true); // Force refresh para limpar cache
+
+      console.log("🔄 Desativando modo de reordenação...");
+      setIsReorderMode(false);
+
+      console.log("📢 Mostrando toast de sucesso...");
+      toast({
+        title: "Ordem salva com sucesso!",
+        description: "A ordem dos posts foi atualizada.",
+      });
+
+      console.log("✅ Salvamento concluído com sucesso!");
+    } catch (error) {
+      console.error("❌ Erro ao salvar ordem:", error);
+      console.error(
+        "❌ Stack trace:",
+        error instanceof Error ? error.stack : "N/A"
+      );
+
+      toast({
+        title: "Erro ao salvar ordem",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Não foi possível salvar a nova ordem dos posts.",
+        variant: "destructive",
+      });
+    } finally {
+      console.log(
+        "🏁 Finalizando salvamento (setando isSavingOrder = false)..."
+      );
+      setIsSavingOrder(false);
+      console.log("🏁 Salvamento finalizado!");
+    }
+  };
+
+  // Função para cancelar reordenação
+  const cancelReordering = () => {
+    setReorderedPosts(posts);
+    setIsReorderMode(false);
+  };
 
   // Monitora scroll para botão "voltar ao topo"
   React.useEffect(() => {
@@ -323,7 +661,7 @@ export function BlogPostList() {
       });
     }
 
-    // Ordenação
+    // Ordenação (prioriza a ordem do backend quando existir)
     switch (sortBy) {
       case "popular":
         filtered = [...filtered].sort(
@@ -335,11 +673,17 @@ export function BlogPostList() {
         break;
       case "recent":
       default:
-        filtered = [...filtered].sort(
-          (a, b) =>
+        filtered = [...filtered].sort((a, b) => {
+          // Se ambos têm order, usa order
+          if (typeof a.order === "number" && typeof b.order === "number") {
+            return a.order - b.order;
+          }
+          // Senão, cai no publishedAt/createdAt
+          return (
             new Date(b.publishDate).getTime() -
             new Date(a.publishDate).getTime()
-        );
+          );
+        });
     }
 
     return filtered;
@@ -607,6 +951,91 @@ export function BlogPostList() {
           <div className="absolute bottom-4 left-4 w-1 h-1 bg-emerald-400/40 rounded-full animate-pulse delay-500" />
         </Card>
       </motion.div>
+
+      {/* Controles de Reordenação (Apenas Admin) */}
+      {isAdmin && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="space-y-4"
+        >
+          <div className="flex items-center justify-end gap-4">
+            {!isReorderMode ? (
+              <Button
+                onClick={() => {
+                  console.log("🎯 Ativando modo de reordenação");
+                  console.log("📊 Posts disponíveis:", posts.length);
+                  setIsReorderMode(true);
+                }}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                <GripVertical className="w-4 h-4 mr-2" />
+                Reordenar Posts
+              </Button>
+            ) : (
+              <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-4 shadow-lg">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <GripVertical className="w-5 h-5 animate-pulse" />
+                  <span className="font-semibold">
+                    Modo de Reordenação Ativo
+                  </span>
+                  <span className="text-xs bg-blue-200 px-2 py-1 rounded-full">
+                    {reorderedPosts.length} posts
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={savePostsOrder}
+                    disabled={isSavingOrder}
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-md hover:shadow-lg transition-all"
+                  >
+                    {isSavingOrder ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        Salvando...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Salvar Ordem
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={cancelReordering}
+                    disabled={isSavingOrder}
+                    variant="outline"
+                    className="border-2 border-red-300 text-red-600 hover:bg-red-50 transition-all"
+                  >
+                    <XIcon className="w-4 h-4 mr-2" />
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Debug Info - Apenas em desenvolvimento */}
+          {process.env.NODE_ENV === "development" && isReorderMode && (
+            <div className="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-xs">
+              <div className="font-bold mb-2">🔧 Debug Info:</div>
+              <div>Posts carregados: {posts.length}</div>
+              <div>Posts reordenados: {reorderedPosts.length}</div>
+              <div>
+                Usuário: {user?.name || "N/A"} ({user?.role || "N/A"})
+              </div>
+              <div>
+                Modo reordenação: {isReorderMode ? "✅ Ativo" : "❌ Inativo"}
+              </div>
+              <div>Salvando: {isSavingOrder ? "⏳ Sim" : "✅ Não"}</div>
+              <div className="mt-2 text-xs text-gray-400">
+                💡 Abra o Console do navegador (F12) para ver logs detalhados
+              </div>
+            </div>
+          )}
+        </motion.div>
+      )}
 
       {/* Estatísticas Ultra-Modernas 2025 */}
       <motion.div
@@ -883,6 +1312,48 @@ export function BlogPostList() {
                 Tentar novamente
               </Button>
             </div>
+          </motion.div>
+        ) : isReorderMode && isAdmin ? (
+          // Modo de Reordenação - Mostra todos os posts em uma lista vertical com drag and drop
+          <motion.div
+            key="reorder-mode"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="space-y-4"
+          >
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={reorderedPosts.map((p) => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {reorderedPosts.map((post) => (
+                  <SortablePostItem
+                    key={post.id}
+                    post={post}
+                    onView={async (viewedPost) => {
+                      // Registrar visualização
+                      try {
+                        await fetch(`/api/posts/${viewedPost.id}/view`, {
+                          method: "POST",
+                        });
+                      } catch (error) {
+                        console.error("Erro ao registrar visualização:", error);
+                      }
+                      router.push(`/blog/${viewedPost.slug}`);
+                    }}
+                    formatDate={formatDate}
+                    getCategoryColor={getCategoryColor}
+                    truncateText={truncateText}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </motion.div>
         ) : paginatedPosts.length > 0 ? (
           <motion.div

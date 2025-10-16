@@ -195,10 +195,15 @@ const ROUTE_SECURITY_MATRIX: RouteSecurityMatrix = {
 
     // API Administrative Endpoints
     "/api/admin/users",
+    "/api/admin/users/*",
     "/api/admin/posts",
+    "/api/admin/posts/*",
     "/api/admin/analytics",
+    "/api/admin/analytics/*",
     "/api/admin/system",
+    "/api/admin/system/*",
     "/api/admin/logs",
+    "/api/admin/logs/*",
   ] as const,
 
   /**
@@ -779,13 +784,14 @@ function createSecureSuccessResponse(
  * @returns NextResponse with appropriate security enforcement
  */
 export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const { pathname } = request.nextUrl;
+
   // MIDDLEWARE RE-ENABLED - CRITICAL FOR AUTHENTICATION
   const startTime = performance.now();
   const correlationId = crypto.randomUUID();
 
   try {
     // Early termination for static assets and health checks
-    const { pathname } = request.nextUrl;
 
     if (
       pathname.startsWith("/_next/") ||
@@ -801,6 +807,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       RouteClassificationCache.get(pathname) || classifyRoute(pathname);
     if (routeType) {
       RouteClassificationCache.set(pathname, routeType);
+    }
+
+    // 🔍 DEBUG: Mostrar classificação da rota admin
+    if (pathname.includes("/admin/")) {
+      console.log(`   - Route Type: ${routeType}`);
+      console.log(`   - Should be: adminOnly`);
     }
 
     // Public API routes - no authentication required
@@ -911,6 +923,7 @@ export const config = {
      * - All API endpoints (/api/*)
      * - Dynamic routes with parameters
      * - Authentication flows
+     * - Admin API routes explicitly included for proper auth handling
      *
      * EXCLUDED for Performance:
      * - Next.js internal routes (_next/static, _next/image)
@@ -921,6 +934,7 @@ export const config = {
      * This configuration ensures comprehensive security coverage
      * while maintaining optimal performance characteristics.
      */
+    "/api/admin/:path*", // Explicitly include admin API routes
     "/((?!_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|woff|woff2|ttf|eot)$).*)",
   ],
 };

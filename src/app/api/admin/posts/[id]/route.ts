@@ -4,11 +4,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { verifyToken, extractTokenFromCookie } from "@/lib/auth";
 import { AuthErrorCode } from "@/types/auth";
+import { fixQuillListsBeforeSave } from "@/lib/fix-quill-lists";
 
 interface RouteContext {
   params: Promise<{
     id: string;
   }>;
+}
+
+// Função para limpar o cache de posts
+async function clearPostsCache() {
+  try {
+    const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+    await fetch(`${baseUrl}/api/posts?clearCache=true`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    console.log("🧹 Cache de posts limpo");
+  } catch (error) {
+    console.error("⚠️ Erro ao limpar cache:", error);
+  }
 }
 
 // PUT - Atualizar post (apenas admins)
@@ -65,29 +80,32 @@ export async function PUT(request: NextRequest, context: RouteContext) {
     const processContentForStorage = (content: string) => {
       if (!content) return "";
 
-      // Se já tem tags HTML estruturadas, retornar sem processar
+      let processedContent = content;
+
+      // Se já tem tags HTML estruturadas
       if (
         content.includes("</p>") ||
         content.includes("<ul>") ||
         content.includes("<ol>") ||
         content.includes("<div")
       ) {
-        return content;
+        // Usar a função utilitária para corrigir listas
+        return fixQuillListsBeforeSave(processedContent);
       }
 
       // Normalizar quebras de linha (Windows/Mac para Unix)
-      const normalizedContent = content
+      const normalizedContent = processedContent
         .replace(/\r\n/g, "\n") // Windows
         .replace(/\r/g, "\n"); // Mac antigo
 
       // Preservar linhas vazias convertendo-as em &nbsp; para não colapsar
-      const processedContent = normalizedContent
+      const finalContent = normalizedContent
         .split("\n")
         .map((line) => line || "&nbsp;") // Linhas vazias viram &nbsp;
         .join("\n");
 
       // Envolver em div com white-space: pre-line para preservar quebras de linha
-      return `<div style="white-space: pre-line; line-height: 1.75;">${processedContent}</div>`;
+      return `<div style="white-space: pre-line; line-height: 1.75;">${finalContent}</div>`;
     };
 
     // Verificar se o post existe
@@ -150,6 +168,9 @@ export async function PUT(request: NextRequest, context: RouteContext) {
         },
       },
     });
+
+    // Limpar o cache de posts
+    await clearPostsCache();
 
     return NextResponse.json({
       post: updatedPost,
@@ -237,6 +258,9 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     await db.post.delete({
       where: { id },
     });
+
+    // Limpar o cache de posts
+    await clearPostsCache();
 
     return NextResponse.json({
       message: "Post deletado com sucesso",

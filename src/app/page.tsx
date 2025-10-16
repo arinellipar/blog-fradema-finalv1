@@ -284,11 +284,12 @@ function HeroSection() {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6"
             >
-              Expertise Tributária
+              {" "}
+              #1 em Consultoria Tributária
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-500">
-                que Transforma
+                Soluções Tributárias que Transformam
               </span>
-              Resultados
+              seu Negócio
             </motion.h1>
 
             <motion.p
@@ -504,15 +505,14 @@ function AboutSection() {
               Nossa História
             </Badge>
             <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              25 Anos de Excelência em
+              25+ Anos de Excelência em
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-500">
                 Consultoria Tributária
               </span>
             </h2>
             <p className="text-lg text-gray-600 mb-6">
-              A Fradema nasceu da visão de transformar a complexidade tributária
-              brasileira em oportunidades de crescimento para empresas de todos
-              os portes.
+              Há mais de 25 anos transformando desafios tributários em
+              oportunidades de crescimento para empresas de todos os portes.
             </p>
             <p className="text-gray-600 mb-8">
               Nossa abordagem combina expertise técnica com tecnologia de ponta,
@@ -673,8 +673,8 @@ function BlogSection() {
             transition={{ delay: 0.6, duration: 0.8 }}
             className="text-xl text-blue-100/80 max-w-4xl mx-auto leading-relaxed"
           >
-            Insights exclusivos, análises especializadas e as últimas
-            atualizações do mundo tributário
+            Fique por dentro dos principais acontecimentos do setor e novidades
+            sobre a Fradema
             <span className="block mt-2 text-green-400 font-semibold">
               para manter sua empresa sempre à frente
             </span>

@@ -30,6 +30,34 @@ export function RichTextEditor({
   placeholder = "Escreva seu conteúdo aqui...",
   className = "",
 }: RichTextEditorProps) {
+  const quillRef = React.useRef<any>(null);
+
+  // Detectar URLs e convertê-las em links automaticamente
+  React.useEffect(() => {
+    if (quillRef.current) {
+      const quill = quillRef.current.getEditor();
+
+      // Handler para detectar URLs ao digitar
+      quill.on("text-change", (delta: any, oldDelta: any, source: string) => {
+        if (source === "user") {
+          const text = quill.getText();
+          const urlRegex = /(https?:\/\/[^\s]+)/g;
+          let match;
+
+          while ((match = urlRegex.exec(text)) !== null) {
+            const url = match[0];
+            const index = match.index;
+
+            // Verificar se já não é um link
+            const format = quill.getFormat(index, url.length);
+            if (!format.link) {
+              quill.formatText(index, url.length, "link", url, "silent");
+            }
+          }
+        }
+      });
+    }
+  }, []);
   // Configuração da toolbar
   const modules = useMemo(
     () => ({
@@ -47,6 +75,49 @@ export function RichTextEditor({
       ],
       clipboard: {
         matchVisual: false,
+        matchers: [
+          // Matcher customizado para preservar listas com bullet points ao colar
+          [
+            Node.ELEMENT_NODE,
+            (node: any, delta: any) => {
+              // Se for uma lista UL (não ordenada), garantir que seja bullet
+              if (node.tagName === "UL") {
+                delta.ops = delta.ops.map((op: any) => {
+                  if (op.attributes && op.attributes.list) {
+                    return {
+                      ...op,
+                      attributes: { ...op.attributes, list: "bullet" },
+                    };
+                  }
+                  return op;
+                });
+              }
+              // Se for uma lista OL (ordenada), garantir que seja ordered
+              if (node.tagName === "OL") {
+                delta.ops = delta.ops.map((op: any) => {
+                  if (op.attributes && op.attributes.list) {
+                    return {
+                      ...op,
+                      attributes: { ...op.attributes, list: "ordered" },
+                    };
+                  }
+                  return op;
+                });
+              }
+              // Detectar e preservar links ao colar
+              if (node.tagName === "A" && node.href) {
+                const ops = delta.ops || [];
+                return {
+                  ops: ops.map((op: any) => ({
+                    ...op,
+                    attributes: { ...op.attributes, link: node.href },
+                  })),
+                };
+              }
+              return delta;
+            },
+          ],
+        ],
       },
     }),
     []
@@ -73,6 +144,7 @@ export function RichTextEditor({
   return (
     <div className={`rich-text-editor ${className}`}>
       <ReactQuill
+        ref={quillRef}
         theme="snow"
         value={value}
         onChange={onChange}

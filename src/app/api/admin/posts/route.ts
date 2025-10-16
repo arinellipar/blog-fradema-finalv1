@@ -89,6 +89,7 @@ export async function GET(request: NextRequest) {
       slug: post.slug,
       excerpt: post.excerpt,
       mainImage: post.mainImage,
+      content: post.content, // ✅ INCLUIR O CONTEÚDO DO POST
       published: post.published,
       publishedAt: post.publishedAt,
       createdAt: post.createdAt,

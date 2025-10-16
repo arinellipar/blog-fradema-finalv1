@@ -1,15 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { authGuard as getAuthGuard } from "@/lib/auth";
+import { fixQuillListsBeforeSave } from "@/lib/fix-quill-lists";
 
 // Cache simples em memória
 let postsCache: any = null;
 let cacheTimestamp = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
+// Função para limpar o cache de posts
+export function clearPostsCacheLocal() {
+  console.log("🧹 Limpando cache local de posts...");
+  postsCache = null;
+  cacheTimestamp = 0;
+}
+
 // GET /api/posts - Listar posts (com cache)
 export async function GET(request: NextRequest) {
   try {
+    // Verificar se foi solicitada a limpeza do cache
+    const { searchParams } = new URL(request.url);
+    const clearCache = searchParams.get("clearCache") === "true";
+
+    if (clearCache) {
+      clearPostsCacheLocal();
+    }
+
     // Verificar se o cache ainda é válido
     const now = Date.now();
     if (postsCache && now - cacheTimestamp < CACHE_DURATION) {
@@ -33,6 +49,7 @@ export async function GET(request: NextRequest) {
         publishedAt: true,
         createdAt: true,
         readingTime: true,
+        order: true,
         author: {
           select: {
             id: true,
@@ -100,8 +117,10 @@ const processContentForStorage = (content: string) => {
   console.log("Tamanho original:", content.length);
   console.log("Primeiros 200 chars:", content.substring(0, 200));
 
-  // O Quill já gera HTML formatado, apenas retornar diretamente
-  return content;
+  // Usar a função utilitária para corrigir listas
+  const processedContent = fixQuillListsBeforeSave(content);
+
+  return processedContent;
 };
 
 // POST /api/posts - Criar novo post
@@ -343,7 +362,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Limpar cache após criar post
-    postsCache = null;
+    clearPostsCacheLocal();
 
     return NextResponse.json(post, { status: 201 });
   } catch (error: any) {
