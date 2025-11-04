@@ -1,14 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// src/middleware.ts - ENTERPRISE-GRADE SECURITY MIDDLEWARE v2.1.0
+// src/proxy.ts - ENTERPRISE-GRADE SECURITY PROXY v3.0.0
 /**
- * @fileoverview Production-Ready Security Middleware with Advanced Route Protection
- * @version 2.1.0
+ * @fileoverview Production-Ready Security Proxy with Advanced Route Protection
+ * @version 3.0.0 - Next.js 16 Compatible
  * @author Enterprise Security Team
  *
  * @description
- * Comprehensive middleware implementing defense-in-depth security architecture
+ * Comprehensive proxy implementing defense-in-depth security architecture
  * with granular route protection, role-based access control (RBAC), and
  * performance-optimized authentication pipeline.
+ *
+ * @nextjs16
+ * This file follows the new Next.js 16 convention using proxy.ts instead of middleware.ts
+ * Runtime is automatically set to Node.js and cannot be configured.
  *
  * @features
  * - Corrected route security matrix eliminating circular dependencies
@@ -33,7 +37,7 @@
  * - Memory pool management for high-throughput scenarios
  */
 
-export const runtime = "nodejs";
+// Runtime is automatically set to Node.js in proxy.ts (Next.js 16)
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
@@ -526,7 +530,7 @@ function classifyRoute(pathname: string): keyof RouteSecurityMatrix | null {
   let classification: keyof RouteSecurityMatrix | null = null;
 
   // Debug: Log the pathname being classified
-  console.log(`[MIDDLEWARE] Classifying pathname: "${pathname}"`);
+  console.log(`[PROXY] Classifying pathname: "${pathname}"`);
 
   // Check publicApi first with exact match for critical auth routes
   const publicApiRoutes = ROUTE_SECURITY_MATRIX.publicApi;
@@ -535,7 +539,7 @@ function classifyRoute(pathname: string): keyof RouteSecurityMatrix | null {
   if (publicApiRoutes.includes(pathname as any)) {
     classification = "publicApi";
     console.log(
-      `[MIDDLEWARE] Exact match found in publicApi for "${pathname}"`
+      `[PROXY] Exact match found in publicApi for "${pathname}"`
     );
   } else {
     // Use pattern matching for other routes
@@ -544,7 +548,7 @@ function classifyRoute(pathname: string): keyof RouteSecurityMatrix | null {
       publicApiRoutes
     );
     console.log(
-      `[MIDDLEWARE] publicApi pattern match for "${pathname}": ${publicApiMatch}`
+      `[PROXY] publicApi pattern match for "${pathname}": ${publicApiMatch}`
     );
 
     if (publicApiMatch) {
@@ -572,7 +576,7 @@ function classifyRoute(pathname: string): keyof RouteSecurityMatrix | null {
   }
 
   console.log(
-    `[MIDDLEWARE] Final classification for "${pathname}": ${classification}`
+    `[PROXY] Final classification for "${pathname}": ${classification}`
   );
 
   // Cache the result for future lookups
@@ -767,10 +771,11 @@ function createSecureSuccessResponse(
   return response;
 }
 
-// ===== MAIN MIDDLEWARE IMPLEMENTATION =====
+// ===== MAIN PROXY IMPLEMENTATION =====
 
 /**
- * Enterprise-Grade Security Middleware with Advanced Route Protection
+ * Enterprise-Grade Security Proxy with Advanced Route Protection
+ * Next.js 16 Compatible Implementation
  *
  * Implements comprehensive security architecture with:
  * - Corrected authentication pipeline eliminating circular dependencies
@@ -783,10 +788,10 @@ function createSecureSuccessResponse(
  * @param request - NextRequest containing complete HTTP request context
  * @returns NextResponse with appropriate security enforcement
  */
-export async function middleware(request: NextRequest): Promise<NextResponse> {
+export default async function proxy(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
-  // MIDDLEWARE RE-ENABLED - CRITICAL FOR AUTHENTICATION
+  // PROXY ENABLED - CRITICAL FOR AUTHENTICATION (Next.js 16)
   const startTime = performance.now();
   const correlationId = crypto.randomUUID();
 
@@ -881,7 +886,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       contentType: routeType === "adminOnly" ? "admin" : "web",
     });
   } catch (error) {
-    console.error(`[${correlationId}] Middleware error:`, error);
+    console.error(`[${correlationId}] Proxy error:`, error);
 
     // Graceful fallback for critical errors
     if (request.nextUrl.pathname.startsWith("/api/")) {
@@ -900,7 +905,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   } finally {
     const executionTime = performance.now() - startTime;
     console.log(
-      `[${correlationId}] Middleware execution time: ${executionTime.toFixed(
+      `[${correlationId}] Proxy execution time: ${executionTime.toFixed(
         2
       )}ms`
     );
@@ -943,9 +948,9 @@ export const config = {
 
 /**
  * Performance Monitoring and Cache Metrics Export
- * Provides runtime visibility into middleware performance characteristics
+ * Provides runtime visibility into proxy performance characteristics
  */
 if (typeof window === "undefined") {
   // Only run in server environment
-  console.log("[MIDDLEWARE] Performance monitoring enabled");
+  console.log("[PROXY] Performance monitoring enabled - Next.js 16");
 }

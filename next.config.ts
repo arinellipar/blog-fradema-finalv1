@@ -7,14 +7,8 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
   compress: true,
 
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
   experimental: {
     browserDebugInfoInTerminal: true,
-    clientSegmentCache: true,
-    devtoolSegmentExplorer: true,
     globalNotFound: true,
     // Otimizações de performance
     optimizePackageImports: [
@@ -38,6 +32,9 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+
+  // ESLint configuração movida para eslint.config.mjs no Next.js 16
+  // Use next lint ao invés de configuração inline
 
   // Otimizações de imagens
   images: {
