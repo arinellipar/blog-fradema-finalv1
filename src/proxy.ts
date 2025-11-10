@@ -900,7 +900,7 @@ export default async function proxy(
 
     return createSecureRedirectResponse("/auth/login", request, {
       preserveQuery: true,
-      securityLevel: "minimal",
+      securityLevel: "standard",
     });
   } finally {
     const executionTime = performance.now() - startTime;
