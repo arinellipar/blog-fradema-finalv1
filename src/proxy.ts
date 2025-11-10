@@ -538,9 +538,7 @@ function classifyRoute(pathname: string): keyof RouteSecurityMatrix | null {
   // Exact match for critical auth routes
   if (publicApiRoutes.includes(pathname as any)) {
     classification = "publicApi";
-    console.log(
-      `[PROXY] Exact match found in publicApi for "${pathname}"`
-    );
+    console.log(`[PROXY] Exact match found in publicApi for "${pathname}"`);
   } else {
     // Use pattern matching for other routes
     const publicApiMatch = PatternMatcher.matchesRoute(
@@ -788,7 +786,9 @@ function createSecureSuccessResponse(
  * @param request - NextRequest containing complete HTTP request context
  * @returns NextResponse with appropriate security enforcement
  */
-export default async function proxy(request: NextRequest): Promise<NextResponse> {
+export default async function proxy(
+  request: NextRequest
+): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
 
   // PROXY ENABLED - CRITICAL FOR AUTHENTICATION (Next.js 16)
@@ -905,9 +905,7 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
   } finally {
     const executionTime = performance.now() - startTime;
     console.log(
-      `[${correlationId}] Proxy execution time: ${executionTime.toFixed(
-        2
-      )}ms`
+      `[${correlationId}] Proxy execution time: ${executionTime.toFixed(2)}ms`
     );
   }
 }

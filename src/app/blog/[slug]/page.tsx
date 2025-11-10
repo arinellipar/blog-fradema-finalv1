@@ -337,7 +337,7 @@ export default function BlogPostPage() {
               initial={{ scale: 1.1, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.7 }}
-              className="relative w-full h-[60vh] md:h-[70vh] overflow-hidden"
+              className="relative w-full h-[70vh] md:h-[80vh] overflow-hidden"
             >
               <Image
                 src={post.mainImage}
@@ -346,7 +346,7 @@ export default function BlogPostPage() {
                 className="object-cover"
                 priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/90 to-slate-950/60" />
 
               {/* Animated Overlay Effects */}
               <div className="absolute inset-0">
@@ -366,15 +366,15 @@ export default function BlogPostPage() {
             </motion.div>
 
             {/* Conteúdo sobre a imagem */}
-            <div className="absolute inset-0 flex flex-col justify-end py-12 overflow-y-auto">
-              <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+            <div className="absolute inset-0 flex flex-col justify-center py-16 overflow-y-auto">
+              <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-6">
                 {/* Categorias */}
                 {post.categories.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="flex flex-wrap gap-2 mb-6"
+                    className="flex flex-wrap gap-2"
                   >
                     {post.categories.map(({ category }) => (
                       <Badge
@@ -393,7 +393,12 @@ export default function BlogPostPage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
+                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent break-words"
+                  style={{
+                    lineHeight: '1.2',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word'
+                  }}
                 >
                   {post.title}
                 </motion.h1>
@@ -404,7 +409,7 @@ export default function BlogPostPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="text-xl md:text-2xl text-blue-200/90 mb-8 max-w-3xl leading-relaxed"
+                    className="text-lg md:text-xl lg:text-2xl text-blue-200/90 max-w-3xl leading-relaxed"
                   >
                     {post.excerpt}
                   </motion.p>
@@ -480,7 +485,7 @@ export default function BlogPostPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="flex flex-wrap items-center gap-3 mt-6"
+                  className="flex flex-wrap items-center gap-3"
                 >
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -590,7 +595,12 @@ export default function BlogPostPage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent"
+                  className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent break-words"
+                  style={{
+                    lineHeight: '1.2',
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word'
+                  }}
                 >
                   {post.title}
                 </motion.h1>
@@ -601,7 +611,7 @@ export default function BlogPostPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="text-xl md:text-2xl text-blue-200/90 mb-8 max-w-3xl leading-relaxed"
+                    className="text-lg md:text-xl lg:text-2xl text-blue-200/90 mb-8 max-w-3xl leading-relaxed"
                   >
                     {post.excerpt}
                   </motion.p>
@@ -677,7 +687,7 @@ export default function BlogPostPage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.6 }}
-                  className="flex flex-wrap items-center gap-3 mt-6"
+                  className="flex flex-wrap items-center gap-3"
                 >
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
