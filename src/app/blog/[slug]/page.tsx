@@ -44,9 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import { formatDate, ROUTES } from "@/lib/utils";
 import { Comments } from "@/components/blog/comments";
 import { UserRole } from "@/types/auth";
-import { RichTextViewer } from "@/components/ui/rich-text-viewer";
 import { RichTextViewerAlternative } from "@/components/ui/rich-text-viewer-alternative";
-import { DebugHtmlViewer } from "@/components/ui/debug-html-viewer";
 
 interface Post {
   id: string;
@@ -764,24 +762,6 @@ export default function BlogPostPage() {
       >
         {/* Content Card with Light Background */}
         <div className="bg-white rounded-3xl border border-blue-200/20 p-8 md:p-12 shadow-2xl shadow-blue-500/10">
-          {/* Debug do HTML */}
-          <DebugHtmlViewer
-            content={
-              typeof post.content === "string"
-                ? post.content
-                : String(post.content || "")
-            }
-            title="🔍 Debug: HTML Original do Banco de Dados"
-          />
-
-          {/* Teste com viewer alternativo */}
-          <div className="mb-4 p-4 bg-yellow-50 border border-yellow-300 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              🔧 Debug Mode: Testando correção de listas. Por favor, verifique o
-              console (F12).
-            </p>
-          </div>
-
           <RichTextViewerAlternative
             content={
               typeof post.content === "string"
